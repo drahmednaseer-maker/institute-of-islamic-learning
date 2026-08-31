@@ -1,0 +1,13 @@
+<dialog class="modal" id="bookModal" aria-labelledby="bookModalTitle">
+  <form method="dialog" class="modal__x"><button class="icon-btn" aria-label="Close dialog" value="close">
+    <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3z"/></svg>
+  </button></form>
+  <div class="modal__body">
+    <p class="eyebrow"><span aria-hidden="true">✦</span> 3 free classes</p>
+    <h2 id="bookModalTitle" class="modal__title">Book your free trial</h2>
+    <p class="modal__lead">Tell us a little about the student and we’ll match you with the right tutor and a time that suits you.</p>
+    <form class="booking-form" data-booking novalidate>
+      {{> bookingfields}}
+    </form>
+  </div>
+</dialog>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Institute of Islamic Learning">
+  <title>Institute of Islamic Learning</title>
+  <defs>
+    <path id="iil-top" d="M256,256 m-214,0 a214,214 0 1,1 428,0"/>
+    <path id="iil-bot" d="M256,256 m-214,0 a214,214 0 1,0 428,0"/>
+  </defs>
+  <circle cx="256" cy="256" r="250" fill="#FFFFFF"/>
+  <circle cx="256" cy="256" r="246" fill="none" stroke="#8C7F6C" stroke-width="7"/>
+  <circle cx="256" cy="256" r="176" fill="none" stroke="#141414" stroke-width="8"/>
+  <g fill="#141414" font-family="'Times New Roman',Times,Georgia,serif" font-weight="700" font-size="52" letter-spacing="4">
+    <text text-anchor="middle"><textPath href="#iil-top" startOffset="50%">INSTITUTE OF</textPath></text>
+    <text text-anchor="middle"><textPath href="#iil-bot" startOffset="50%">ISLAMIC LEARNING</textPath></text>
+  </g>
+  <g fill="#8C7F6C">
+    <path d="M42 244 l6.6 13.4 14.8 2.2 -10.7 10.4 2.5 14.7 -13.2 -7 -13.2 7 2.5 -14.7 -10.7 -10.4 14.8 -2.2z"/>
+    <path d="M470 244 l6.6 13.4 14.8 2.2 -10.7 10.4 2.5 14.7 -13.2 -7 -13.2 7 2.5 -14.7 -10.7 -10.4 14.8 -2.2z"/>
+  </g>
+  <text x="256" y="216" text-anchor="middle" fill="#141414" font-family="'Amiri Quran','Amiri','Geeza Pro','Noto Naskh Arabic','Scheherazade New',serif" font-size="92" direction="rtl" xml:lang="ar">القرآن الكريم</text>
+  <g>
+    <path fill="#D99B34" d="M256 342c-30-24-79-38-131-39l-4 0 0 62 4 0c46 1 91 13 121 34l10 7 10-7c30-21 75-33 121-34l4 0 0-62-4 0c-52 1-101 15-131 39z"/>
+    <path fill="#FFFFFF" d="M251 350c-30-22-76-35-125-36l0 12c45 1 88 13 116 33l9 6 0-11zM261 350c30-22 76-35 125-36l0 12c-45 1-88 13-116 33l-9 6 0-11z"/>
+    <path fill="#D99B34" d="M121 366c48 1 94 14 124 35l11 8 11-8c30-21 76-34 124-35l0 24-4 0c-46 1-91 13-121 34l-10 7-10-7c-30-21-75-33-121-34l-4 0z"/>
+  </g>
+</svg>

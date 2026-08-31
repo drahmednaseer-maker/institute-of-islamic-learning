@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://institute-of-islamic-learning.vercel.app/sitemap.xml

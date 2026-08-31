@@ -1,0 +1,13 @@
+{
+  "name": "institute-of-islamic-learning",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Marketing site for the Institute of Islamic Learning — live one-to-one online Quran and Arabic classes.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs && node --run serve",
+    "serve": "npx --yes serve dist -l 4321"
+  },
+  "engines": { "node": ">=18" }
+}
