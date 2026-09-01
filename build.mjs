@@ -42,6 +42,18 @@ function expand(html, depth = 0) {
   return next === html ? html : expand(next, depth + 1);
 }
 
+/* {{#key}}…{{/key}} keeps a block only when `key` has a value;
+   {{^key}}…{{/key}} is the inverse. Used for optional contact details. */
+function sections(html, vars, depth = 0) {
+  if (depth > 4) return html;
+  const next = html.replace(/\{\{([#^])(\w+)\}\}([\s\S]*?)\{\{\/\2\}\}/g,
+    (_, kind, key, body) => {
+      const has = Boolean(vars[key]);
+      return (kind === '#' ? has : !has) ? body : '';
+    });
+  return next === html ? html : sections(next, vars, depth + 1);
+}
+
 function fill(tpl, vars) {
   return tpl.replace(/\{\{\s*([\w-]+)\s*\}\}/g, (m, k) => (k in vars ? vars[k] : ''));
 }
@@ -129,6 +141,7 @@ for (const file of pageFiles) {
   let html = layout.replace('{{content}}', () => body).replace('{{schema}}', () => vars.schema);
   html = expand(html);
   html = html.replace('<!--SOCIALS-->', renderSocials);
+  html = sections(html, vars);
   html = fill(html, vars);
   html = html.replace('<!--PRICING-->', renderPricing);
   /* mark the active nav item */

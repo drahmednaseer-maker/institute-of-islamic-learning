@@ -82,6 +82,6 @@
   <p>A WhatsApp window should have opened with your details filled in. If it didn’t, use a button below and we’ll take it from there.</p>
   <div class="cta-band__btns" style="margin-top:1.25rem">
     <a class="btn btn--gold" data-wa href="https://wa.me/{{whatsapp}}" target="_blank" rel="noopener">Send on WhatsApp</a>
-    <a class="btn btn--ghost" data-mail href="mailto:{{email}}">Send by email</a>
+    {{#email}}<a class="btn btn--ghost" data-mail href="mailto:{{email}}">Send by email</a>{{/email}}{{^email}}<a class="btn btn--ghost" href="tel:{{phoneHref}}">Call us instead</a>{{/email}}
   </div>
 </div>

@@ -39,7 +39,7 @@
       <h2>Get in touch</h2>
       <ul>
         <li><a href="tel:{{phoneHref}}">{{phone}}</a></li>
-        <li><a href="mailto:{{email}}">{{email}}</a></li>
+        {{#email}}<li><a href="mailto:{{email}}">{{email}}</a></li>{{/email}}
         <li>{{areaLine}}</li>
       </ul>
       <a class="btn btn--gold btn--sm" href="/contact#book" data-book>Start Free Trial</a>

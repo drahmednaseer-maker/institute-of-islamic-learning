@@ -9,7 +9,9 @@ export const CONTACT = {
   phoneHref: '+923358076339',
   /* Used in wa.me links — digits only, country code first, no + or spaces */
   whatsapp: '923358076339',
-  email: 'info@instituteofislamiclearning.com',
+  /* Leave empty until a real inbox exists — the email link, footer entry,
+     contact card, JSON-LD property and mail fallback all disappear. */
+  email: '',
   /* Optional street address; leave empty to omit it from the footer */
   address: '',
   areaLine: 'Serving students in the USA, UK, Canada, Australia &amp; Europe',

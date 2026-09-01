@@ -153,14 +153,16 @@
       const data = Object.fromEntries(new FormData(form).entries());
       const msg = buildMessage(data);
       const wa = `https://wa.me/${CFG.whatsapp}?text=${encodeURIComponent(msg)}`;
-      const mail = `mailto:${CFG.email}?subject=${encodeURIComponent('Free trial request — ' + data.name)}&body=${encodeURIComponent(msg)}`;
+      const mail = CFG.email
+        ? `mailto:${CFG.email}?subject=${encodeURIComponent('Free trial request — ' + data.name)}&body=${encodeURIComponent(msg)}`
+        : '';
 
       const done = $('.form-done', form);
       if (done) {
         const link = $('[data-wa]', done);
         const mlink = $('[data-mail]', done);
         if (link) link.href = wa;
-        if (mlink) mlink.href = mail;
+        if (mlink && mail) mlink.href = mail;
       }
       form.classList.add('is-sent');
       try { window.open(wa, '_blank', 'noopener'); } catch (err) {}

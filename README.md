@@ -56,7 +56,7 @@ export const CONTACT = {
   phoneDisplay: '+92 300 408 0290',   // what visitors see
   phoneHref:    '+923004080290',      // tel: links — digits and a leading +
   whatsapp:     '923004080290',       // wa.me links — digits only, no + or spaces
-  email:        'info@example.com',
+  email:        '',                   // empty removes every email link from the site
   address:      '',                   // optional, omitted from the footer when empty
   areaLine:     'Serving students in ...',
 };
@@ -65,6 +65,12 @@ export const CONTACT = {
 Pages and partials reference them as `{{phone}}`, `{{phoneHref}}`, `{{whatsapp}}`, `{{email}}`,
 `{{address}}` and `{{areaLine}}`; the booking script has `whatsapp` and `email` baked in at build
 time. Change a value once and it updates across the pages, the JSON-LD and the WhatsApp handoff.
+
+Templates support `{{#email}}…{{/email}}` (render only when the value is set) and
+`{{^email}}…{{/email}}` (render only when it is empty). That is how the site currently ships
+with no email at all: the top-bar link, footer entry, contact card and JSON-LD property are
+dropped, and the booking form offers "Call us instead" in place of the mail fallback. Fill in
+`email` and all of it reappears.
 
 `SOCIAL` in the same file drives the footer icons — **a social entry with an empty `url` is dropped
 entirely**, so there are never dead links to placeholder profiles.
