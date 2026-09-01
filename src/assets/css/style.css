@@ -782,3 +782,21 @@ html[data-theme=dark] .course-index a:hover{background:#12312780;color:var(--gol
   .section{padding-block:clamp(2.25rem,6vw,3rem)}
   .price-note{max-width:36ch;margin-inline:auto}
 }
+
+/* ---------- contact aside on phones ---------- */
+@media (max-width:900px){
+  /* the "other ways" are the quick buttons at the top of the page now, so this
+     label no longer describes what follows it */
+  .eyebrow--ways{display:none}
+}
+@media (max-width:600px){
+  #book .contact-quick a{padding:.8rem 1rem;font-size:.92rem}
+  #book .h2{font-size:1.5rem}
+  #book .lead{font-size:.92rem}
+  #book .card{padding:1.15rem}
+  #book .card .h3{font-size:1rem;margin-bottom:.5rem}
+  #book .card .ticklist{gap:.55rem;margin-top:.7rem}
+  #book .card .ticklist li{font-size:.86rem;line-height:1.5}
+  #book .card .ticklist svg{width:17px;height:17px}
+  .form-actions .btn{width:100%}
+}
