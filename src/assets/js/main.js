@@ -281,6 +281,14 @@
     if (matchMedia('(hover:none)').matches) f.classList.toggle('is-flipped');
   }));
 
+
+  /* ---------------- long course cards collapse on phones ---------------- */
+  /* They ship open so the content is there without JS; on a small screen the
+     bullet lists fold away and the page becomes scannable. */
+  const collapsible = $$('.course__more');
+  if (collapsible.length && matchMedia('(max-width:600px)').matches) {
+    collapsible.forEach((d) => d.removeAttribute('open'));
+  }
   /* ---------------- deep link: open modal from #book on non-contact pages ---------------- */
   if (location.hash === '#book' && !$('.booking-form--inline') && modal?.showModal) {
     modal.showModal();
