@@ -103,13 +103,16 @@ html[data-theme=dark] .btn--ghost:hover{background:#1231278a;color:var(--gold-30
 .topbar__link:hover{color:var(--gold-300)}
 .topbar .ico{width:14px;height:14px;fill:var(--gold-400);flex:none}
 @media (max-width:960px){.topbar__links{display:none}.topbar__inner{justify-content:center}.topbar__note{text-align:center;font-size:.76rem}}
+.topbar__short{display:none}
+@media (max-width:600px){.topbar__inner{min-height:32px;padding-block:.25rem}.topbar__note{font-size:.72rem;letter-spacing:.005em}.topbar__full{display:none}.topbar__short{display:inline}}
 
 /* ---------- header ---------- */
 .site-header{position:sticky;top:0;z-index:80;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line);transition:box-shadow .25s,background-color .25s}
 .site-header.is-stuck{box-shadow:var(--shadow-md)}
 .header__inner{display:flex;align-items:center;gap:1rem;min-height:var(--header-h)}
 .brand{display:inline-flex;align-items:center;gap:.7rem;flex:none}
-.brand__mark{width:58px;height:58px;border-radius:50%;background:#fff;object-fit:cover;flex:none}
+.brand__mark{width:58px;height:58px;border-radius:50%;background:#fff;object-fit:cover;flex:none;box-shadow:0 0 0 1px rgba(140,127,108,.45),0 1px 3px rgba(16,24,20,.08)}
+html[data-theme=dark] .brand__mark{box-shadow:0 0 0 1px rgba(221,174,90,.35)}
 .brand__text{display:flex;flex-direction:column;line-height:1.08;font-family:var(--f-display)}
 .brand__text strong{font-size:.82rem;font-weight:400;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim)}
 .brand__text em{font-style:normal;font-size:1.16rem;font-weight:700;color:var(--text);letter-spacing:.005em}
@@ -145,7 +148,8 @@ html[data-theme=dark] .theme-toggle .ico--sun{display:none}
 html[data-theme=dark] .theme-toggle .ico--moon{display:block}
 .scroll-progress{position:absolute;left:0;bottom:-1px;height:2px;width:0;background:linear-gradient(90deg,var(--gold-500),var(--green-600));transition:width .1s linear}
 @media (max-width:1080px){.nav,.header__cta{display:none}.burger{display:flex}.nav{margin-inline:0}.header__inner{justify-content:space-between}}
-@media (max-width:420px){.brand__text strong{font-size:.68rem}.brand__text em{font-size:1rem}.brand__mark{width:48px;height:48px}}
+@media (max-width:600px){:root{--header-h:64px}.header__inner{gap:.5rem}.brand{gap:.6rem}.brand__mark{width:50px;height:50px}.brand__text strong{font-size:.64rem;letter-spacing:.15em}.brand__text em{font-size:1.05rem}.header__actions{gap:.15rem}.icon-btn{width:40px;height:40px}.burger{width:42px;height:42px}}
+@media (max-width:360px){.brand__mark{width:44px;height:44px}.brand__text strong{font-size:.58rem}.brand__text em{font-size:.96rem}}
 
 /* ---------- drawer ---------- */
 .drawer{position:fixed;inset:0;z-index:120;background:rgba(7,25,20,.55);backdrop-filter:blur(3px);opacity:0;transition:opacity .25s}
@@ -190,7 +194,8 @@ body.no-scroll{overflow:hidden}
 .hero__badge i{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:rgba(221,174,90,.16);flex:none;font-style:normal}
 .hero__badge svg{width:16px;height:16px;fill:var(--gold-400)}
 @media (max-width:900px){.hero__inner{grid-template-columns:1fr;text-align:center;padding-block:2.75rem 3.25rem}.hero__lead,.hero__stats{margin-inline:auto}.hero__pills,.hero__cta{justify-content:center}.hero .eyebrow{margin-inline:auto}.hero__art{order:-1;margin-bottom:.5rem}.hero__medallion{width:min(300px,62vw)}.hero__badge{font-size:.78rem;padding:.5rem .8rem}}@media (max-width:760px){.hero__medallion{width:min(250px,58vw);animation:none}.hero__badges{gap:.5rem}}
-@media (max-width:420px){.hero__stats{gap:.5rem}.stat span{font-size:.72rem}.hero .eyebrow{font-size:.68rem;letter-spacing:.1em;padding:.35rem .7rem}}
+@media (max-width:600px){.hero .eyebrow{font-size:.68rem;letter-spacing:.09em;padding:.38rem .8rem}}
+@media (max-width:420px){.hero__stats{gap:.5rem}.stat span{font-size:.72rem}.hero .eyebrow{font-size:.62rem;letter-spacing:.06em;padding:.35rem .7rem}}
 
 /* ---------- trust strip ---------- */
 .trust{background:var(--bg-alt);border-block:1px solid var(--line);padding-block:1.1rem}
