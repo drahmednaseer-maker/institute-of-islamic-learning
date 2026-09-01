@@ -3,8 +3,8 @@
   'use strict';
 
   const CFG = {
-    whatsapp: '923004080290',
-    email: 'info@instituteofislamiclearning.com',
+    whatsapp: '__WHATSAPP__',
+    email: '__EMAIL__',
   };
 
   const $ = (s, c = document) => c.querySelector(s);

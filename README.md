@@ -49,17 +49,25 @@ schema: pricing.html  # optional JSON-LD file from src/schema/
 
 ### Contact details
 
-Placeholder contact details ship with the site. Replace them in three places:
+All of them live in one file: **`src/data/site.mjs`**.
 
-1. `src/assets/js/main.js` — the `CFG` object at the top (drives the booking form's WhatsApp handoff)
-2. `src/partials/header.html` and `src/partials/footer.html` — the visible `tel:`, `mailto:` and `wa.me` links
-3. `src/pages/contact.html` and `src/partials/bookingfields.html` — the contact cards and fallback buttons
-
-A quick way to find every occurrence:
-
-```bash
-grep -rn "923004080290\|instituteofislamiclearning.com" src/
+```js
+export const CONTACT = {
+  phoneDisplay: '+92 300 408 0290',   // what visitors see
+  phoneHref:    '+923004080290',      // tel: links — digits and a leading +
+  whatsapp:     '923004080290',       // wa.me links — digits only, no + or spaces
+  email:        'info@example.com',
+  address:      '',                   // optional, omitted from the footer when empty
+  areaLine:     'Serving students in ...',
+};
 ```
+
+Pages and partials reference them as `{{phone}}`, `{{phoneHref}}`, `{{whatsapp}}`, `{{email}}`,
+`{{address}}` and `{{areaLine}}`; the booking script has `whatsapp` and `email` baked in at build
+time. Change a value once and it updates across the pages, the JSON-LD and the WhatsApp handoff.
+
+`SOCIAL` in the same file drives the footer icons — **a social entry with an empty `url` is dropped
+entirely**, so there are never dead links to placeholder profiles.
 
 ## Logo assets
 

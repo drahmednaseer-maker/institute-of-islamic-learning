@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REGIONS, DURATIONS, PLANS, monthly, featuresFor } from './src/data/pricing.mjs';
+import { CONTACT, SOCIAL } from './src/data/site.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const SRC = join(root, 'src');
@@ -45,6 +46,12 @@ function fill(tpl, vars) {
   return tpl.replace(/\{\{\s*([\w-]+)\s*\}\}/g, (m, k) => (k in vars ? vars[k] : ''));
 }
 
+
+function renderSocials() {
+  return SOCIAL.filter((s) => s.url).map((s) =>
+    `<a href="${s.url}" aria-label="${s.name}" rel="noopener" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${s.path}"/></svg></a>`
+  ).join('\n        ');
+}
 
 const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 16.2 5.4 12l-1.4 1.4 5.6 5.6L20.4 8.2 19 6.8z"/></svg>';
 
@@ -111,10 +118,17 @@ for (const file of pageFiles) {
     schema: meta.schema ? read(join(SRC, 'schema', meta.schema)) : '',
     site: SITE,
     year: String(new Date().getFullYear()),
+    phone: CONTACT.phoneDisplay,
+    phoneHref: CONTACT.phoneHref,
+    whatsapp: CONTACT.whatsapp,
+    email: CONTACT.email,
+    address: CONTACT.address,
+    areaLine: CONTACT.areaLine,
   };
   /* insert the page body first so partial includes inside it expand too */
-  let html = layout.replace('{{content}}', () => body);
+  let html = layout.replace('{{content}}', () => body).replace('{{schema}}', () => vars.schema);
   html = expand(html);
+  html = html.replace('<!--SOCIALS-->', renderSocials);
   html = fill(html, vars);
   html = html.replace('<!--PRICING-->', renderPricing);
   /* mark the active nav item */
@@ -177,6 +191,20 @@ function fingerprintAssets() {
     if (/\.(html|webmanifest|xml|txt)$/.test(f)) rewrite(f);
   }
   return map;
+}
+
+/* the booking script needs the same contact details — bake them in */
+const jsDir = join(OUT, 'assets', 'js');
+if (existsSync(jsDir)) {
+  for (const f of readdirSync(jsDir).filter((n) => n.endsWith('.js'))) {
+    const file = join(jsDir, f);
+    writeFileSync(
+      file,
+      readFileSync(file, 'utf8')
+        .replaceAll('__WHATSAPP__', CONTACT.whatsapp)
+        .replaceAll('__EMAIL__', CONTACT.email)
+    );
+  }
 }
 
 const fingerprinted = fingerprintAssets();
