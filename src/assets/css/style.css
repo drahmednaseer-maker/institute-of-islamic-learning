@@ -616,3 +616,37 @@ html[data-theme=dark] .course-index a:hover{background:#12312780;color:var(--gol
   .course__meta{padding-top:.55rem}
   .course .btn{padding:.62rem 1.1rem;font-size:.86rem;margin-top:.75rem}
 }
+
+/* ---------- about page & feature cards on phones ---------- */
+@media (max-width:600px){
+  /* icon beside the text rather than stacked above it */
+  .card--row{display:grid;grid-template-columns:44px 1fr;column-gap:.9rem;row-gap:.25rem;align-items:start}
+  .card--row .card__icon{grid-row:1/3;width:44px;height:44px;margin-bottom:0;align-self:center}
+  .card--row h3{grid-column:2;align-self:end;margin-bottom:0}
+  .card--row p{grid-column:2;align-self:start}
+
+  /* teacher: portrait initial on the left, details on the right */
+  .teacher{display:grid;grid-template-columns:62px 1fr;column-gap:.95rem;row-gap:.15rem;
+    text-align:left;padding-top:1.15rem;align-items:start}
+  .teacher__ava{grid-row:1/4;width:62px;height:62px;margin:0;font-size:1.4rem}
+  .teacher b,.teacher .role,.teacher p{grid-column:2}
+  .teacher b{font-size:1.02rem;align-self:end}
+  .teacher .role{font-size:.8rem;margin-bottom:.15rem}
+  .teacher p{font-size:.86rem;line-height:1.5}
+
+  .mini-stats{grid-template-columns:1fr 1fr;gap:.6rem;margin-top:1.25rem}
+  .mini-stat{padding:.8rem .85rem;border-radius:var(--r-sm)}
+  .mini-stat b{font-size:1.3rem}
+  .mini-stat span{font-size:.76rem}
+
+  .split{gap:1.75rem}
+  .split__media{aspect-ratio:16/10}
+  .split__media .ar{font-size:1.5rem;padding:1.25rem;line-height:1.9}
+  .split__media small{font-size:.7rem;margin-top:.75rem}
+
+  .page-hero__inner{padding-block:2rem 2.25rem}
+  .page-hero p{font-size:.94rem}
+  .crumbs{margin-bottom:.75rem;font-size:.8rem}
+  .section-head{margin-bottom:1.5rem}
+  .ticklist li{font-size:.9rem}
+}
