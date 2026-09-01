@@ -67,7 +67,7 @@
     drawer.hidden = !v;
     burger.setAttribute('aria-expanded', String(v));
     document.body.classList.toggle('no-scroll', v);
-    if (v) { const f = $('a,button', drawer); f && f.focus(); } else burger.focus();
+    if (v) { const f = $('#drawerClose', drawer) || $('a,button', drawer); f && f.focus(); } else burger.focus();
   };
   on(burger, 'click', () => setDrawer(drawer.hidden));
   on($('#drawerClose'), 'click', () => setDrawer(false));
