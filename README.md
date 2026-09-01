@@ -61,6 +61,22 @@ A quick way to find every occurrence:
 grep -rn "923004080290\|instituteofislamiclearning.com" src/
 ```
 
+## Logo assets
+
+`src/assets/img/logo-source.jpg` is the original 1080px seal. Everything else is derived from it:
+
+| File | Size | Used by |
+| --- | --- | --- |
+| `logo.webp` / `logo.jpg` | 800px | hero medallion (`<picture>`, WebP with JPEG fallback) |
+| `logo-sm.webp` / `logo-sm.jpg` | 176px | header and footer marks |
+| `apple-touch-icon.png` | 180px | iOS home screen |
+| `favicon-32.png`, `favicon-96.png` | 32 / 96px | browser tab |
+| `og.jpg` | 1200×630 | social share card |
+
+All of them are cropped square to the seal's true bounds with a small margin, so a
+`border-radius: 50%` mask lands exactly on the outer ring. If the logo is ever replaced,
+swap `logo-source.jpg` and regenerate the derived sizes at the same crop.
+
 ## How the booking form works
 
 There is no backend. On submit the form validates in the browser, composes a formatted message and opens WhatsApp with it pre-filled, with a `mailto:` fallback shown in the success state. To switch to a hosted form service later, replace the submit handler in `src/assets/js/main.js`.
