@@ -800,3 +800,18 @@ html[data-theme=dark] .course-index a:hover{background:#12312780;color:var(--gol
   #book .card .ticklist svg{width:17px;height:17px}
   .form-actions .btn{width:100%}
 }
+
+/* ---------- about page, second pass ---------- */
+@media (max-width:900px){
+  /* the home page puts its ayah panel first in the DOM and the about page puts
+     it last, so a stacked split opened differently on each. The panel leads
+     the section on both now. */
+  .split__media{order:-1}
+}
+@media (max-width:600px){
+  .teacher{grid-template-columns:56px 1fr;column-gap:.85rem}
+  .teacher__ava{width:56px;height:56px;font-size:1.3rem}
+  .teacher b{font-size:1rem}
+  .teacher .role{font-size:.78rem}
+  #teachers .btn{width:100%;max-width:22rem}
+}
