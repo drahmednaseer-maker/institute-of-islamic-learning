@@ -63,7 +63,7 @@ grep -rn "923004080290\|instituteofislamiclearning.com" src/
 
 ## Logo assets
 
-`src/assets/img/logo-source.jpg` is the original 1080px seal. Everything else is derived from it:
+`brand/logo-original.jpg` is the original 1080px seal (kept in the repo, not deployed). Everything else is derived from it:
 
 | File | Size | Used by |
 | --- | --- | --- |
@@ -75,7 +75,7 @@ grep -rn "923004080290\|instituteofislamiclearning.com" src/
 
 All of them are cropped square to the seal's true bounds with a small margin, so a
 `border-radius: 50%` mask lands exactly on the outer ring. If the logo is ever replaced,
-swap `logo-source.jpg` and regenerate the derived sizes at the same crop.
+swap `brand/logo-original.jpg` and regenerate the derived sizes at the same crop.
 
 ## How the booking form works
 
@@ -87,5 +87,5 @@ There is no backend. On submit the form validates in the browser, composes a for
 - Fonts self-hosted and subset; Latin preloaded, Arabic loaded only when needed
 - Every graphic is inline SVG or a CSS gradient — no raster images in the critical path
 - `content-visibility: auto` on below-the-fold sections
-- Immutable one-year caching on `/assets/*` via `vercel.json`
+- Assets are content-hashed at build time (`style.<hash>.css`), so the one-year `immutable` cache in `vercel.json` is safe — a changed file gets a new URL and reaches returning visitors immediately. Pages themselves always revalidate.
 - Full dark mode, keyboard navigation, reduced-motion support and skip links

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /* Zero-dependency static site builder for Institute of Islamic Learning.
    Assembles src/pages/*.html into dist/ using src/layout.html + src/partials/*. */
-import { readFileSync, writeFileSync, readdirSync, mkdirSync, rmSync, cpSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, mkdirSync, rmSync, cpSync, existsSync, statSync, renameSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REGIONS, DURATIONS, PLANS, monthly, featuresFor } from './src/data/pricing.mjs';
@@ -131,6 +132,55 @@ for (const f of ['robots.txt', 'site.webmanifest', 'favicon.svg']) {
 const staticDir = join(SRC, 'static');
 if (existsSync(staticDir)) cpSync(staticDir, OUT, { recursive: true });
 
+/* ------------------------------------------------------------------
+   Fingerprint every asset so `immutable` caching is actually safe.
+   Leaf assets (fonts, images) are hashed first, their new paths are
+   written into the css/js that reference them, then css/js themselves
+   are hashed, and finally every path is rewritten across the pages.
+   ------------------------------------------------------------------ */
+function fingerprintAssets() {
+  const hash = (buf) => createHash('sha256').update(buf).digest('hex').slice(0, 8);
+  const map = new Map();
+
+  const collect = (dir, out = []) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      entry.isDirectory() ? collect(full, out) : out.push(full);
+    }
+    return out;
+  };
+
+  const rename = (file) => {
+    const buf = readFileSync(file);
+    const dot = file.lastIndexOf('.');
+    const next = `${file.slice(0, dot)}.${hash(buf)}${file.slice(dot)}`;
+    renameSync(file, next);
+    map.set(file.slice(OUT.length).replace(/\\/g, '/'), next.slice(OUT.length).replace(/\\/g, '/'));
+  };
+
+  const rewrite = (file) => {
+    let text = readFileSync(file, 'utf8');
+    for (const [from, to] of map) text = text.split(from).join(to);
+    writeFileSync(file, text);
+  };
+
+  const assetsDir = join(OUT, 'assets');
+  if (!existsSync(assetsDir)) return map;
+  const all = collect(assetsDir);
+  const isCode = (f) => /\.(css|js)$/.test(f);
+
+  all.filter((f) => !isCode(f)).forEach(rename);
+  all.filter(isCode).forEach((f) => rewrite(f));          /* still at their original paths */
+  collect(assetsDir).filter(isCode).forEach(rename);
+
+  for (const f of collect(OUT)) {
+    if (/\.(html|webmanifest|xml|txt)$/.test(f)) rewrite(f);
+  }
+  return map;
+}
+
+const fingerprinted = fingerprintAssets();
+
 const today = new Date().toISOString().slice(0, 10);
 writeFileSync(
   join(OUT, 'sitemap.xml'),
@@ -145,4 +195,4 @@ const walk = (d) => readdirSync(d).forEach((f) => {
   statSync(p).isDirectory() ? walk(p) : (bytes += statSync(p).size);
 });
 walk(OUT);
-console.log(`✓ built ${pageFiles.length} pages → dist/ (${(bytes / 1024).toFixed(1)} KB total)`);
+console.log(`✓ built ${pageFiles.length} pages, ${fingerprinted.size} fingerprinted assets → dist/ (${(bytes / 1024).toFixed(1)} KB total)`);
