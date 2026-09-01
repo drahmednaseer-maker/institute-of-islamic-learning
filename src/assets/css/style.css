@@ -650,3 +650,46 @@ html[data-theme=dark] .course-index a:hover{background:#12312780;color:var(--gol
   .section-head{margin-bottom:1.5rem}
   .ticklist li{font-size:.9rem}
 }
+
+/* ---------- contact page ---------- */
+.contact-quick{display:none}
+.contact-quick__or{display:none}
+
+@media (max-width:900px){
+  /* the fastest paths sit above a form that is otherwise ~1000px tall */
+  .contact-quick{display:grid;grid-template-columns:1fr auto;gap:.6rem;margin-top:1.5rem}
+  .contact-quick a{display:flex;align-items:center;justify-content:center;gap:.55rem;
+    padding:.85rem 1.1rem;border-radius:var(--r-pill);font-weight:650;font-size:.95rem;
+    transition:transform .18s var(--ease),box-shadow .18s var(--ease)}
+  .contact-quick a:active{transform:translateY(1px)}
+  .contact-quick svg{width:19px;height:19px;fill:currentColor;flex:none}
+  .contact-quick__wa{background:#25D366;color:#062B14;box-shadow:0 6px 18px rgba(37,211,102,.3)}
+  .contact-quick__tel{background:transparent;border:1.5px solid var(--line);color:var(--text)}
+  .contact-quick__tel:hover{border-color:var(--gold-500)}
+  .contact-quick__or{display:flex;align-items:center;gap:.75rem;margin-top:1.35rem;
+    font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim)}
+  .contact-quick__or::before,.contact-quick__or::after{content:"";flex:1;height:1px;background:var(--line)}
+  .booking-form--inline{margin-top:1rem!important}
+  .req--dup{display:none}
+}
+
+@media (max-width:560px){
+  /* two-up for the short selects; everything else keeps the full width */
+  .field-grid{grid-template-columns:1fr 1fr;gap:.85rem}
+  .field{grid-column:1/-1}
+  .field--half{grid-column:span 1}
+  .field__label{font-size:.8rem}
+  .field input,.field select,.field textarea{padding:.7rem .8rem;font-size:.92rem}
+  .field select{background-size:18px;padding-right:1.9rem}
+  .field textarea{min-height:74px}
+  .field-note{font-size:.8rem;margin-top:.75rem}
+  .form-actions{margin-top:.9rem}
+}
+
+@media (max-width:600px){
+  .contact-quick__tel span{display:none}
+  .faq summary{padding:.9rem 1rem;font-size:.93rem}
+  .faq .faq__a{padding:0 1rem 1rem;font-size:.9rem}
+  .modal__body{padding:1.25rem}
+  .modal__lead{font-size:.9rem;margin-bottom:1rem}
+}

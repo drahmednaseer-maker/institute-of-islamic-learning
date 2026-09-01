@@ -19,6 +19,17 @@ schema: contact.html
       <p class="eyebrow"><span aria-hidden="true">✦</span> Trial request</p>
       <h2 class="h2">Tell us about the student</h2>
       <p class="lead">It takes under a minute. We'll confirm your tutor and timing on WhatsApp, usually the same day.</p>
+      <div class="contact-quick">
+        <a class="contact-quick__wa" href="https://wa.me/{{whatsapp}}?text=Assalamu%20Alaikum%2C%20I%27d%20like%20to%20book%20a%20free%20trial%20class." target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2m0 18a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20m4.4-5.8c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.1-.2 0-.4.1-.5l.4-.5.2-.4v-.4l-.7-1.7c-.2-.4-.4-.4-.5-.4h-.5a1 1 0 0 0-.7.3A3 3 0 0 0 7.3 10a5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4 7.6 7.6 0 0 0 1.5.5 3.6 3.6 0 0 0 1.7.1 2.8 2.8 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3z"/></svg>
+          Message on WhatsApp
+        </a>
+        <a class="contact-quick__tel" href="tel:{{phoneHref}}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.58 3.6a1 1 0 0 1-.25 1z"/></svg>
+          Call us
+        </a>
+      </div>
+      <p class="contact-quick__or"><span>or fill in the form</span></p>
       <form class="booking-form booking-form--inline" data-booking novalidate style="margin-top:1.75rem">
         {{> bookingfields}}
       </form>
@@ -29,7 +40,7 @@ schema: contact.html
       <h2 class="h2">We answer quickly</h2>
       <p class="lead">Our coordinators are available seven days a week and typically reply within a few hours.</p>
       <div class="grid" style="gap:.85rem;margin-top:1.5rem">
-        <a class="req" href="https://wa.me/{{whatsapp}}" target="_blank" rel="noopener">
+        <a class="req req--dup" href="https://wa.me/{{whatsapp}}" target="_blank" rel="noopener">
           <i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2m4.4 12.2c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.1-.2 0-.4.1-.5l.4-.5.2-.4v-.4l-.7-1.7c-.2-.4-.4-.4-.5-.4h-.5a1 1 0 0 0-.7.3A3 3 0 0 0 7.3 10a5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4 3.6 3.6 0 0 0 3.2.6 2.2 2.2 0 0 0 .3-3.1"/></svg></i>
           <span><b>WhatsApp — fastest</b><span>{{phone}} · replies within hours</span></span>
         </a>
@@ -37,7 +48,7 @@ schema: contact.html
           <i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2m0 4-8 5-8-5V6l8 5 8-5z"/></svg></i>
           <span><b>Email</b><span>{{email}}</span></span>
         </a>{{/email}}
-        <a class="req" href="tel:{{phoneHref}}">
+        <a class="req req--dup" href="tel:{{phoneHref}}">
           <i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.58 3.6a1 1 0 0 1-.25 1z"/></svg></i>
           <span><b>Phone</b><span>{{phone}}</span></span>
         </a>
