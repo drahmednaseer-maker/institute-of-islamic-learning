@@ -745,3 +745,27 @@ html[data-theme=dark] .course-index a:hover{background:#12312780;color:var(--gol
 
   .tslide{flex:0 0 84%}
 }
+
+/* ---------- fee calculator on phones ---------- */
+@media (max-width:820px){
+  /* the running total leads: it stays in view while the selects below change */
+  .calc{display:flex;flex-direction:column;gap:1.1rem}
+  .calc__out{order:-1;padding:1.25rem 1rem}
+  .calc__amount{font-size:clamp(2.2rem,1.6rem + 3vw,3rem)}
+}
+@media (max-width:600px){
+  .calc{padding:1.1rem;gap:.9rem}
+  .calc__fields{grid-template-columns:1fr 1fr;gap:.8rem}
+  .calc__fields .field{grid-column:1/-1}
+  .calc__fields .field--half{grid-column:span 1}
+  .calc__out{padding:1.15rem .9rem;gap:.25rem}
+  .calc__out span{font-size:.68rem;letter-spacing:.12em}
+  .calc__sub{font-size:.8rem;line-height:1.45}
+  .calc__out .btn{margin-top:.75rem;width:100%}
+  .calc .field-note{font-size:.78rem;line-height:1.5;margin-top:.6rem}
+
+  /* section headings carry a lot of air on a small screen */
+  .section-head .lead{font-size:.94rem}
+  .section{padding-block:clamp(2.25rem,6vw,3rem)}
+  .price-note{max-width:36ch;margin-inline:auto}
+}
