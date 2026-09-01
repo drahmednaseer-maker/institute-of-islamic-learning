@@ -4,7 +4,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { join, extname } from 'node:path';
 const ROOT = join(process.cwd(), 'dist');
 const PORT = Number(process.env.PORT || 4321);
-const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json', '.xml': 'application/xml', '.txt': 'text/plain; charset=utf-8', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json', '.xml': 'application/xml', '.txt': 'text/plain; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.webmanifest': 'application/manifest+json' };
 const tryFiles = (p) => [p, p + '.html', join(p, 'index.html')];
 createServer(async (req, res) => {
   const url = decodeURIComponent(new URL(req.url, 'http://x').pathname);
