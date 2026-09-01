@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync, readdirSync, mkdirSync, rmSync, cpSync, ex
 import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { REGIONS, DURATIONS, PLANS, monthly, featuresFor } from './src/data/pricing.mjs';
+import { REGIONS, DURATIONS, PLANS, monthly, planExtras, sharedFeatures } from './src/data/pricing.mjs';
 import { CONTACT, SOCIAL } from './src/data/site.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
@@ -70,7 +70,8 @@ const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 16.2 5.
 /* Build every region x duration pricing panel plus the JSON the calculator reads. */
 function renderPricing() {
   const regionTabs = Object.entries(REGIONS)
-    .map(([k, r], i) => `<button type="button" class="tab" role="tab" data-value="${k}" aria-selected="${i === 0}">${r.label}</button>`)
+    .map(([k, r], i) => `<button type="button" class="tab" role="tab" data-value="${k}" aria-selected="${i === 0}">` +
+      `<span class="tab__long">${r.label}</span><span class="tab__short">${r.short}</span></button>`)
     .join('');
   const durTabs = DURATIONS.map(
     (d, i) => `<button type="button" class="tab" role="tab" data-value="${d}" aria-selected="${i === 0}">${d} minutes</button>`
@@ -81,18 +82,27 @@ function renderPricing() {
       DURATIONS.map((duration) => {
         const cards = PLANS.map((plan) => {
           const amt = monthly(region, duration, plan.per);
-          const feats = featuresFor(plan.per, duration).map((f) => `<li>${CHECK}<span>${f}</span></li>`).join('');
+          const feats = planExtras(plan.per).map((f) => `<li>${CHECK}<span>${f}</span></li>`).join('');
           return `<article class="price${plan.badge ? ' price--featured' : ''}">
             ${plan.badge ? `<span class="price__badge">${plan.badge}</span>` : ''}
-            <h3 class="price__name">${plan.name}</h3>
-            <p class="price__freq">${plan.blurb}</p>
-            <p class="price__amt">${REGIONS[region].symbol}${amt}<small>/ month</small></p>
+            <div class="price__head">
+              <div class="price__id">
+                <h3 class="price__name">${plan.name}</h3>
+                <p class="price__freq">${plan.blurb}</p>
+              </div>
+              <p class="price__amt">${REGIONS[region].symbol}${amt}<small>/ month</small></p>
+            </div>
             <ul>${feats}</ul>
             <a class="btn ${plan.badge ? 'btn--gold' : 'btn--ghost'}" href="/contact#book" data-book>Start free trial</a>
           </article>`;
         }).join('');
+        const shared = sharedFeatures(duration).map((f) => `<li>${CHECK}<span>${f}</span></li>`).join('');
         return `<div data-panel data-region="${region}" data-duration="${duration}" ${region === 'us' && duration === 30 ? '' : 'hidden'}>
           <div class="price-grid">${cards}</div>
+          <div class="price-includes">
+            <h3>Every plan includes</h3>
+            <ul>${shared}</ul>
+          </div>
         </div>`;
       })
     )

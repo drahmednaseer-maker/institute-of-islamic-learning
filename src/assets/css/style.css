@@ -319,6 +319,7 @@ html[data-theme=dark] .course__link{color:var(--gold-300)}
 /* ---------- pricing ---------- */
 .tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem;padding:.4rem;background:var(--bg-alt);border:1px solid var(--line);border-radius:var(--r-pill);width:fit-content;margin:0 auto 1rem}
 .tab{padding:.6rem 1.25rem;border-radius:var(--r-pill);font-size:.92rem;font-weight:600;color:var(--text-dim);transition:background-color .2s,color .2s}
+.tab__short{display:none}
 .tab[aria-selected=true]{background:var(--green-800);color:#fff;box-shadow:var(--shadow-sm)}
 html[data-theme=dark] .tab[aria-selected=true]{background:var(--gold-500);color:#231704}
 .tabs--sub .tab[aria-selected=true]{background:var(--gold-500);color:#231704}
@@ -327,6 +328,7 @@ html[data-theme=dark] .tab[aria-selected=true]{background:var(--gold-500);color:
 .price:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg)}
 .price--featured{border-color:var(--gold-400);box-shadow:0 14px 40px rgba(178,127,44,.2)}
 .price__badge{position:absolute;top:-13px;left:50%;translate:-50% 0;background:linear-gradient(135deg,var(--gold-400),var(--gold-600));color:#231704;font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:.32rem .85rem;border-radius:var(--r-pill);white-space:nowrap}
+.price__head{display:flex;flex-direction:column;gap:.15rem}
 .price__name{font-family:var(--f-display);font-size:1.2rem;font-weight:700}
 .price__freq{font-size:.85rem;color:var(--text-dim);margin-bottom:1rem}
 .price__amt{display:flex;align-items:baseline;gap:.3rem;font-family:var(--f-display);font-size:2.6rem;font-weight:700;color:var(--green-800);line-height:1}
@@ -336,6 +338,12 @@ html[data-theme=dark] .price__amt{color:var(--gold-300)}
 .price li{display:flex;gap:.55rem;align-items:flex-start;color:var(--text-dim)}
 .price li svg{width:18px;height:18px;fill:var(--gold-500);flex:none;margin-top:.15rem}
 .price .btn{margin-top:auto}
+.price-includes{margin-top:clamp(1.25rem,2.5vw,1.75rem);padding:clamp(1.25rem,2.5vw,1.75rem);border-radius:var(--r-lg);
+  background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-sm)}
+.price-includes h3{font-size:1.02rem;margin-bottom:.9rem;text-align:center}
+.price-includes ul{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.6rem 1.5rem;font-size:.92rem}
+.price-includes li{display:flex;gap:.55rem;align-items:flex-start;color:var(--text-dim)}
+.price-includes li svg{width:18px;height:18px;fill:var(--gold-500);flex:none;margin-top:.15rem}
 .price-note{text-align:center;margin-top:1.5rem;font-size:.9rem;color:var(--text-dim)}
 
 /* ---------- calculator ---------- */
@@ -543,4 +551,32 @@ html[data-theme=dark] .to-top{background:var(--gold-500);color:#231704}
   .req span{font-size:.86rem}
   .quote{padding:1.25rem;border-radius:var(--r-md)}
   .quote p{font-size:.92rem}
+}
+
+/* ---------- pricing on phones ---------- */
+@media (max-width:600px){
+  .tabs{width:100%;gap:.25rem;padding:.3rem;border-radius:var(--r-md)}
+  .tab{flex:1;padding:.55rem .5rem;font-size:.82rem;text-align:center;white-space:nowrap}
+  .tab__long{display:none}
+  .tab__short{display:inline}
+  .tabs--sub .tab{font-size:.8rem}
+  .price-grid{gap:.75rem;margin-top:1.5rem}
+  .price{padding:1.1rem 1.15rem 1.15rem;border-radius:var(--r-md)}
+  .price__head{flex-direction:row;align-items:flex-start;justify-content:space-between;gap:.75rem}
+  .price__id{min-width:0}
+  .price__name{font-size:1.08rem}
+  .price__freq{font-size:.8rem;margin-bottom:0}
+  .price__amt{flex:none;font-size:1.85rem;align-items:baseline;flex-wrap:wrap;justify-content:flex-end}
+  .price__amt small{font-size:.72rem;width:100%;text-align:right}
+  .price ul{gap:.4rem;margin:.9rem 0 1rem;font-size:.86rem}
+  .price li svg{width:16px;height:16px}
+  .price .btn{padding:.7rem 1.1rem;font-size:.9rem}
+  .price--featured{border-width:1.5px}
+  .price__badge{font-size:.64rem;padding:.26rem .7rem;top:-11px}
+  .price-includes{padding:1.15rem;border-radius:var(--r-md)}
+  .price-includes h3{font-size:.95rem;margin-bottom:.75rem}
+  .price-includes ul{grid-template-columns:1fr;gap:.5rem;font-size:.87rem}
+  .price-note{font-size:.84rem;margin-top:1.1rem}
+  .calc{padding:1.15rem;border-radius:var(--r-md)}
+  .calc__out{padding:1.35rem 1rem}
 }
