@@ -282,6 +282,41 @@
   }));
 
 
+
+  /* ---------------- course index follows the scroll ---------------- */
+  /* Marks the chip for the course in view, the way the nav marks the current
+     page, and keeps that chip visible in the scrolling row. Picks the last
+     course whose top has passed a line near the top of the viewport — an
+     intersection band catches two cards at once and picks the wrong one. */
+  const indexLinks = $$('.course-index a');
+  if (indexLinks.length) {
+    const row = $('.course-index');
+    const byId = new Map(indexLinks.map((a) => [a.getAttribute('href').slice(1), a]));
+    const sections = $$('.course[id]').filter((el) => byId.has(el.id));
+    let current = null;
+    let pending = false;
+    const syncIndex = () => {
+      pending = false;
+      if (!sections.length) return;
+      const line = window.innerHeight * 0.3;
+      let active = sections[0];
+      for (const el of sections) if (el.getBoundingClientRect().top <= line) active = el;
+      if (active === current) return;
+      current = active;
+      indexLinks.forEach((a) => a.removeAttribute('aria-current'));
+      const chip = byId.get(active.id);
+      if (!chip) return;
+      chip.setAttribute('aria-current', 'true');
+      if (row && row.scrollWidth > row.clientWidth) {
+        const left = chip.offsetLeft - (row.clientWidth - chip.offsetWidth) / 2;
+        row.scrollTo({ left: Math.max(0, left), behavior: 'auto' });
+      }
+    };
+    on(window, 'scroll', () => { if (!pending) { pending = true; requestAnimationFrame(syncIndex); } }, { passive: true });
+    on(window, 'resize', syncIndex);
+    syncIndex();
+  }
+
   /* ---------------- long course cards collapse on phones ---------------- */
   /* They ship open so the content is there without JS; on a small screen the
      bullet lists fold away and the page becomes scannable. */

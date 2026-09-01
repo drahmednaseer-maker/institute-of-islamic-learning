@@ -596,6 +596,8 @@ html[data-theme=dark] .to-top{background:var(--gold-500);color:#231704}
   background:var(--bg-alt);border:1px solid var(--line);font-size:.85rem;font-weight:600;color:var(--text-dim);
   white-space:nowrap;transition:background-color .2s,color .2s,border-color .2s}
 .course-index a:hover{background:var(--green-50);color:var(--green-800);border-color:var(--green-600)}
+.course-index a[aria-current]{background:var(--green-800);color:#fff;border-color:transparent;box-shadow:var(--shadow-sm)}
+html[data-theme=dark] .course-index a[aria-current]{background:var(--gold-500);color:#231704}
 html[data-theme=dark] .course-index a:hover{background:#12312780;color:var(--gold-300);border-color:var(--gold-500)}
 
 .course__more{margin:0}
@@ -603,9 +605,15 @@ html[data-theme=dark] .course-index a:hover{background:#12312780;color:var(--gol
 .course__more .ticklist{margin:1.1rem 0 0}
 
 @media (max-width:600px){
-  .course-index{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;gap:.4rem;
+  /* stays put under the header so the active marker is actually visible
+     and any course is one tap away */
+  .course-index{position:sticky;top:var(--header-h);z-index:20;
+    flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;gap:.4rem;
     margin-inline:calc(clamp(1rem,4vw,2rem) * -1);padding-inline:clamp(1rem,4vw,2rem);
-    padding-bottom:.35rem;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    padding-block:.5rem;margin-bottom:1rem;
+    background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:saturate(1.3) blur(10px);
+    border-bottom:1px solid var(--line);
+    scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .course-index::-webkit-scrollbar{display:none}
   .course-index a{font-size:.8rem;padding:.42rem .8rem}
 
@@ -623,7 +631,12 @@ html[data-theme=dark] .course-index a:hover{background:#12312780;color:var(--gol
   .course{gap:.45rem}
   .course p{font-size:.88rem;line-height:1.52}
   .course__meta{padding-top:.55rem}
-  .course .btn{padding:.62rem 1.1rem;font-size:.86rem;margin-top:.75rem}
+  /* eight full-width gold buttons down the page read as a wall; a compact
+     pill keeps the per-course action without shouting over the copy */
+  .course .btn{align-self:flex-start;padding:.55rem 1.15rem;font-size:.84rem;margin-top:.65rem;
+    box-shadow:0 3px 10px rgba(178,127,44,.24)}
+  .course__meta{padding-top:.5rem;gap:.28rem}
+  .course p{margin-bottom:.1rem}
 }
 
 /* ---------- about page & feature cards on phones ---------- */
