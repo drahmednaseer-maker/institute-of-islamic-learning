@@ -3,12 +3,12 @@
    change a value once and it updates everywhere. */
 
 export const CONTACT = {
-  /* Shown to visitors, e.g. "+92 300 408 0290" */
-  phoneDisplay: '+92 300 408 0290',
+  /* Shown to visitors */
+  phoneDisplay: '+92 335 8076339',
   /* Used in tel: links — digits and a leading +, nothing else */
-  phoneHref: '+923004080290',
+  phoneHref: '+923358076339',
   /* Used in wa.me links — digits only, country code first, no + or spaces */
-  whatsapp: '923004080290',
+  whatsapp: '923358076339',
   email: 'info@instituteofislamiclearning.com',
   /* Optional street address; leave empty to omit it from the footer */
   address: '',
