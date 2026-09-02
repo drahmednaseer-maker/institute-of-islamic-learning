@@ -1,3 +1,5 @@
+import { TRIAL } from './site.mjs';
+
 /* Single source of truth for fee plans — consumed by build.mjs (static cards)
    and shipped to the browser as JSON for the live fee calculator. */
 export const REGIONS = {
@@ -38,5 +40,5 @@ export const sharedFeatures = (duration) => [
   'A tutor matched to your goal and timezone',
   'Free rescheduling, no contract',
   'Course materials included',
-  '3 free trial classes, no card needed',
+  `${TRIAL.classes} free trial classes, no card needed`,
 ];

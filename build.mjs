@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REGIONS, DURATIONS, PLANS, monthly, planExtras, sharedFeatures } from './src/data/pricing.mjs';
-import { CONTACT, SOCIAL } from './src/data/site.mjs';
+import { CONTACT, SOCIAL, TRIAL } from './src/data/site.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const SRC = join(root, 'src');
@@ -131,9 +131,18 @@ for (const file of pageFiles) {
   const { meta, body } = parseMeta(read(join(SRC, 'pages', file)));
   const slug = file.replace(/\.html$/, '');
   const path = slug === 'index' ? '/' : `/${slug}`;
+  /* trial tokens resolve inside title/description too, which are inserted by
+     fill() and so are never rescanned */
+  const trial = {
+    trialDays: String(TRIAL.days),
+    trialClasses: String(TRIAL.classes),
+    trialWord: TRIAL.word,
+    TrialWord: TRIAL.Word,
+  };
   const vars = {
-    title: meta.title || 'Institute of Islamic Learning',
-    description: meta.description || '',
+    ...trial,
+    title: fill(meta.title || 'Institute of Islamic Learning', trial),
+    description: fill(meta.description || '', trial),
     canonical: SITE + path,
     nav: meta.nav || slug,
     bodyClass: meta.bodyClass || '',
