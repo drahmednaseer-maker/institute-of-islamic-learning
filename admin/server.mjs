@@ -8,6 +8,7 @@ import { randomBytes } from 'node:crypto';
 import { db, newId, nowISO, getSetting, setSetting, nextInvoiceNumber, getInvoice, invoiceTotals } from './lib/db.mjs';
 import { isAuthed, issueCookie, clearCookie, checkPassword, setPassword, hasPassword } from './lib/auth.mjs';
 import { formatLead, formatLeadOneLine, formatInvoice, formatTutor, waLink, money, prettyDate } from './lib/format.mjs';
+import { invoiceHTML } from './lib/invoice-html.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const UI = join(here, 'ui');
@@ -298,7 +299,7 @@ route('GET', /^\/api\/invoices\/([\w-]+)\/share$/, async (_req, res, { params })
   if (!inv) return bad(res, 'Invoice not found', 404);
   const org = orgSettings();
   const text = formatInvoice(inv, { org });
-  return ok(res, { ...text, wa: waLink(inv.client_phone, text.whatsapp), waOpen: waLink('', text.whatsapp) });
+  return ok(res, { ...text, wa: waLink(inv.client_phone, text.whatsapp), waOpen: waLink('', text.whatsapp), printUrl: `/invoice/${inv.id}` });
 });
 
 /* Build an invoice from the same plan maths the public pricing page uses. */
@@ -463,6 +464,16 @@ const server = createServer(async (req, res) => {
       console.error(`${req.method} ${path}`, err);
       return bad(res, err.message || 'Server error', 500);
     }
+  }
+
+  /* printable invoice document */
+  const printMatch = path.match(/^\/invoice\/([\w-]+)$/);
+  if (printMatch) {
+    if (!isAuthed(req)) { res.writeHead(302, { Location: '/' }); return res.end(); }
+    const inv = getInvoice(printMatch[1]);
+    if (!inv) return bad(res, 'Invoice not found', 404);
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end(invoiceHTML(inv, orgSettings()));
   }
 
   /* static admin UI */

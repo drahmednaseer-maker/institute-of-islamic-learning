@@ -404,6 +404,7 @@ async function invoiceForm(id = null) {
           const share = await api(`/invoices/${id}/share`);
           shareSheet(`Invoice ${existing.number}`, share, share.wa);
         } }, 'Share') : null,
+        existing ? el('a', { class: 'btn btn--ghost', href: `/invoice/${id}`, target: '_blank', rel: 'noopener' }, 'Print / PDF') : null,
         existing ? el('button', { class: 'btn btn--danger btn--sm', onclick: async () => {
           if (confirm(`Delete invoice ${existing.number}?`)) { await api(`/invoices/${id}`, { method: 'DELETE' }); close(); viewInvoices($('#view')); }
         } }, 'Delete') : null),
@@ -428,7 +429,7 @@ function shareSheet(title, share, primaryWa) {
         share.waOpen ? el('a', { class: 'btn btn--ghost', href: share.waOpen, target: '_blank', rel: 'noopener' }, 'Open WhatsApp…') : null,
         el('button', { class: 'btn btn--ghost', onclick: () => copy(share.whatsapp, 'Copied with WhatsApp formatting') }, 'Copy for WhatsApp'),
         el('button', { class: 'btn btn--ghost', onclick: () => copy(share.plain, 'Copied as plain text') }, 'Copy plain text'),
-        el('button', { class: 'btn btn--ghost', onclick: () => window.print() }, 'Print / PDF')));
+        share.printUrl ? el('a', { class: 'btn btn--ghost', href: share.printUrl, target: '_blank', rel: 'noopener' }, 'Print / PDF') : null));
   });
 }
 
