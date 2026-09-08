@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin · Institute of Islamic Learning</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/logo.jpg" type="image/jpeg">
+<link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+
+<div id="login" class="login hide">
+  <form class="card" id="loginForm">
+    <img src="/logo.jpg" alt="">
+    <h1>Institute of Islamic Learning</h1>
+    <p>Admin sign in</p>
+    <label class="f"><span>Password</span>
+      <input type="password" name="password" autocomplete="current-password" required autofocus>
+    </label>
+    <p class="err" id="loginErr"></p>
+    <button class="btn btn--gold btn--block" type="submit">Sign in</button>
+  </form>
+</div>
+
+<div id="app" class="shell hide">
+  <aside class="side">
+    <div class="side__brand">
+      <img src="/logo.jpg" alt="">
+      <b><span>Institute of</span>Islamic Learning</b>
+    </div>
+    <nav id="nav"></nav>
+    <div class="side__foot">
+      <button class="nav-btn" data-logout>Sign out</button>
+    </div>
+  </aside>
+  <main class="main" id="view"></main>
+</div>
+
+<script src="/app.js" type="module"></script>
+</body>
+</html>

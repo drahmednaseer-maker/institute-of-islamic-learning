@@ -34,3 +34,6 @@ export const TRIAL = {
   word: 'five',
   Word: 'Five',
 };
+
+/* Where the booking form posts. Leave empty to fall back to WhatsApp only. */
+export const LEADS_ENDPOINT = 'https://iil-admin-production.up.railway.app/api/public/leads';

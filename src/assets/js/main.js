@@ -5,6 +5,7 @@
   const CFG = {
     whatsapp: '__WHATSAPP__',
     email: '__EMAIL__',
+    leadsEndpoint: '__LEADS_ENDPOINT__',
   };
 
   const $ = (s, c = document) => c.querySelector(s);
@@ -151,6 +152,20 @@
       if (status) { status.textContent = ''; status.classList.remove('is-error'); }
 
       const data = Object.fromEntries(new FormData(form).entries());
+
+      /* Record the enquiry in the admin backend. The WhatsApp handoff below
+         runs either way, so a backend outage never costs an enquiry. */
+      if (CFG.leadsEndpoint) {
+        try {
+          fetch(CFG.leadsEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...data, source: 'website' }),
+            keepalive: true,
+          }).catch(() => {});
+        } catch (err) {}
+      }
+
       const msg = buildMessage(data);
       const wa = `https://wa.me/${CFG.whatsapp}?text=${encodeURIComponent(msg)}`;
       const mail = CFG.email

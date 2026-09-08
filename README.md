@@ -103,3 +103,45 @@ There is no backend. On submit the form validates in the browser, composes a for
 - `content-visibility: auto` on below-the-fold sections
 - Assets are content-hashed at build time (`style.<hash>.css`), so the one-year `immutable` cache in `vercel.json` is safe — a changed file gets a new URL and reaches returning visitors immediately. Pages themselves always revalidate.
 - Full dark mode, keyboard navigation, reduced-motion support and skip links
+
+## Admin backend
+
+A separate application under `admin/` — enquiries, tutors, invoices, expenses and a
+monthly profit & loss report. Plain `node:http` and `node:sqlite`, no dependencies.
+
+Live at **https://iil-admin-production.up.railway.app** (Railway, with a persistent
+volume mounted at `/data` holding the SQLite file).
+
+```bash
+npm run admin      # http://localhost:4400
+```
+
+| Env var | Purpose |
+| --- | --- |
+| `ADMIN_PASSWORD` | Sets the password on first boot; with `RESET_PASSWORD=1` it resets an existing one |
+| `IIL_DATA_DIR` | Where `iil.db` lives — `/data` on Railway so it survives deploys |
+| `SITE_ORIGIN` | Comma-separated origins allowed to post enquiries |
+| `PORT` | Defaults to 4400 |
+
+### How enquiries arrive
+
+The booking form posts to `POST /api/public/leads` (unauthenticated, rate-limited,
+honeypot-protected) and *then* opens WhatsApp as before. The handoff is deliberately
+independent of the request, so a backend outage never costs an enquiry.
+
+Change or disable the endpoint with `LEADS_ENDPOINT` in `src/data/site.mjs`; an empty
+value falls back to WhatsApp only.
+
+### Sharing
+
+Every enquiry, invoice and tutor renders to text built for WhatsApp — `*bold*` headings,
+no tables, empty fields dropped, and record references stripped of underscores so they
+can't open a stray italic run. Each share offers WhatsApp, "copy for WhatsApp", plain
+text (no markup) and, for enquiries, a one-line summary for group chats.
+
+### Profit & loss
+
+Income counts invoices marked **paid** in the month; expenses are grouped by head.
+Amounts convert to the base currency using the rates you enter under Settings — any
+currency without a rate is listed separately and **excluded** from the totals rather
+than silently counted as zero.

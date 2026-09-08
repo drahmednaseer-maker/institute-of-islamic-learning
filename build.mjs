@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REGIONS, DURATIONS, PLANS, monthly, planExtras, sharedFeatures } from './src/data/pricing.mjs';
-import { CONTACT, SOCIAL, TRIAL } from './src/data/site.mjs';
+import { CONTACT, SOCIAL, TRIAL, LEADS_ENDPOINT } from './src/data/site.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const SRC = join(root, 'src');
@@ -235,6 +235,7 @@ if (existsSync(jsDir)) {
       readFileSync(file, 'utf8')
         .replaceAll('__WHATSAPP__', CONTACT.whatsapp)
         .replaceAll('__EMAIL__', CONTACT.email)
+        .replaceAll('__LEADS_ENDPOINT__', LEADS_ENDPOINT || '')
     );
   }
 }
