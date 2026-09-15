@@ -163,6 +163,8 @@ for (const file of pageFiles) {
   html = sections(html, vars);
   html = fill(html, vars);
   html = html.replace('<!--PRICING-->', renderPricing);
+  html = html.replace('<!--CALC_REGIONS-->', () =>
+    Object.entries(REGIONS).map(([k, r]) => `<option value="${k}">${r.label} (${r.code})</option>`).join(''));
   /* mark the active nav item */
   html = html.replaceAll(`data-nav="${vars.nav}"`, `data-nav="${vars.nav}" aria-current="page"`);
   writeFileSync(join(OUT, file), html);

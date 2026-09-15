@@ -564,8 +564,8 @@ html[data-theme=dark] .to-top{background:var(--gold-500);color:#231704}
 
 /* ---------- pricing on phones ---------- */
 @media (max-width:600px){
-  .tabs{width:100%;gap:.25rem;padding:.3rem;border-radius:var(--r-md)}
-  .tab{flex:1;padding:.55rem .5rem;font-size:.82rem;text-align:center;white-space:nowrap}
+  .tabs{width:100%;gap:.25rem;padding:.3rem;border-radius:var(--r-md);flex-wrap:wrap;justify-content:center}
+  .tab{flex:0 0 auto;padding:.5rem .8rem;font-size:.8rem;text-align:center;white-space:nowrap}
   .tab__long{display:none}
   .tab__short{display:inline}
   .tabs--sub .tab{font-size:.8rem}

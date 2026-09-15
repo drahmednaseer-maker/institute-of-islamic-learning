@@ -302,6 +302,14 @@ route('GET', /^\/api\/invoices\/([\w-]+)\/share$/, async (_req, res, { params })
   return ok(res, { ...text, wa: waLink(inv.client_phone, text.whatsapp), waOpen: waLink('', text.whatsapp), printUrl: `/invoice/${inv.id}` });
 });
 
+route('GET', /^\/api\/pricing\/regions$/, async (_req, res) => {
+  const { REGIONS, DURATIONS } = await import('../src/data/pricing.mjs');
+  return ok(res, {
+    regions: Object.entries(REGIONS).map(([k, r]) => ({ key: k, label: r.label, code: r.code })),
+    durations: DURATIONS,
+  });
+});
+
 /* Build an invoice from the same plan maths the public pricing page uses. */
 route('POST', /^\/api\/invoices\/from-plan$/, async (req, res) => {
   const b = await readBody(req);

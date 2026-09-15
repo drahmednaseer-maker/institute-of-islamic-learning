@@ -8,6 +8,10 @@ export const REGIONS = {
   eu: { label: 'Europe', short: 'Europe', symbol: '€', code: 'EUR', rates: { 30: 15.5, 45: 19.5, 60: 29 } },
   ca: { label: 'Canada', short: 'Canada', symbol: 'C$', code: 'CAD', rates: { 30: 22, 45: 27.5, 60: 41 } },
   au: { label: 'Australia', short: 'Aus', symbol: 'A$', code: 'AUD', rates: { 30: 24, 45: 30, 60: 45 } },
+  /* Gulf rates track the USD figures at the riyal and dirham pegs (3.75 and 3.67),
+     rounded to whole units. Add Qatar, Kuwait, Oman or Bahrain the same way. */
+  sa: { label: 'Saudi Arabia', short: 'Saudi', symbol: 'SAR ', code: 'SAR', rates: { 30: 60, 45: 75, 60: 112 } },
+  ae: { label: 'UAE', short: 'UAE', symbol: 'AED ', code: 'AED', rates: { 30: 59, 45: 74, 60: 110 } },
 };
 
 export const DURATIONS = [30, 45, 60];

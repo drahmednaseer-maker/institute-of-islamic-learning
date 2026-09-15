@@ -313,6 +313,7 @@ async function viewInvoices(view) {
 async function invoiceForm(id = null) {
   const existing = id ? await api(`/invoices/${id}`) : null;
   const settings = await api('/settings');
+  const pricing = await api('/pricing/regions');
   drawer(existing ? `Invoice ${existing.number}` : 'New invoice', (body, close) => {
     const f = formFields([
       ['client_name', 'Client name', 'text', true], ['client_phone', 'Client phone'], ['client_email', 'Client email', 'email'],
@@ -350,9 +351,9 @@ async function invoiceForm(id = null) {
     };
 
     const plan = {
-      region: el('select', {}, ...[['us', 'United States'], ['uk', 'United Kingdom'], ['eu', 'Europe'], ['ca', 'Canada'], ['au', 'Australia']]
-        .map(([v, l]) => el('option', { value: v }, l))),
-      duration: el('select', {}, ...['30', '45', '60'].map((d) => el('option', { value: d }, `${d} min`))),
+      /* straight from the published rates, so this list cannot drift */
+      region: el('select', {}, ...pricing.regions.map((r) => el('option', { value: r.key }, `${r.label} (${r.code})`))),
+      duration: el('select', {}, ...pricing.durations.map((d) => el('option', { value: String(d) }, `${d} min`))),
       per: el('select', {}, ...['2', '3', '4', '5'].map((p) => el('option', { value: p, selected: p === '4' || null }, `${p} / week`))),
       course: el('input', { placeholder: 'Course', value: 'Quran Reading' }),
     };
