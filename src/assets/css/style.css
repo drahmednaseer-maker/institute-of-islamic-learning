@@ -326,7 +326,9 @@ html[data-theme=dark] .course__link{color:var(--gold-300)}
 .ayah__ref{margin-top:.75rem;font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400)}
 
 /* ---------- pricing ---------- */
-.tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem;padding:.4rem;background:var(--bg-alt);border:1px solid var(--line);border-radius:var(--r-pill);width:fit-content;margin:0 auto 1rem}
+/* constrained so eleven regions wrap into balanced rows rather than leaving one tab stranded on a line of its own */
+.tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem;padding:.4rem;background:var(--bg-alt);border:1px solid var(--line);border-radius:var(--r-lg);width:fit-content;max-width:min(100%,720px);margin:0 auto 1rem}
+.tabs--sub{border-radius:var(--r-pill)}
 .tab{padding:.6rem 1.25rem;border-radius:var(--r-pill);font-size:.92rem;font-weight:600;color:var(--text-dim);transition:background-color .2s,color .2s}
 .tab__short{display:none}
 .tab[aria-selected=true]{background:var(--green-800);color:#fff;box-shadow:var(--shadow-sm)}

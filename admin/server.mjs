@@ -304,9 +304,11 @@ route('GET', /^\/api\/invoices\/([\w-]+)\/share$/, async (_req, res, { params })
 
 route('GET', /^\/api\/pricing\/regions$/, async (_req, res) => {
   const { REGIONS, DURATIONS } = await import('../src/data/pricing.mjs');
+  const codes = [...new Set([getSetting('base_currency'), ...Object.values(REGIONS).map((r) => r.code)])].filter(Boolean);
   return ok(res, {
     regions: Object.entries(REGIONS).map(([k, r]) => ({ key: k, label: r.label, code: r.code })),
     durations: DURATIONS,
+    currencies: codes,
   });
 });
 

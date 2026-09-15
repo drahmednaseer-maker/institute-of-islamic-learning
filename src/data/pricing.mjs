@@ -12,6 +12,10 @@ export const REGIONS = {
      rounded to whole units. Add Qatar, Kuwait, Oman or Bahrain the same way. */
   sa: { label: 'Saudi Arabia', short: 'Saudi', symbol: 'SAR ', code: 'SAR', rates: { 30: 60, 45: 75, 60: 112 } },
   ae: { label: 'UAE', short: 'UAE', symbol: 'AED ', code: 'AED', rates: { 30: 59, 45: 74, 60: 110 } },
+  qa: { label: 'Qatar', short: 'Qatar', symbol: 'QAR ', code: 'QAR', rates: { 30: 58, 45: 73, 60: 109 } },
+  kw: { label: 'Kuwait', short: 'Kuwait', symbol: 'KWD ', code: 'KWD', rates: { 30: 4.9, 45: 6.1, 60: 9.2 } },
+  om: { label: 'Oman', short: 'Oman', symbol: 'OMR ', code: 'OMR', rates: { 30: 6.15, 45: 7.7, 60: 11.5 } },
+  bh: { label: 'Bahrain', short: 'Bahrain', symbol: 'BHD ', code: 'BHD', rates: { 30: 6, 45: 7.5, 60: 11.3 } },
 };
 
 export const DURATIONS = [30, 45, 60];
@@ -24,6 +28,9 @@ export const PLANS = [
 ];
 
 export const discountFor = (per) => (per >= 5 ? 0.06 : per >= 4 ? 0.03 : 0);
+/* Published prices are whole units in every currency — KWD 19 reads better on a
+   price list than KWD 19.012. The three-decimal convention for the dinar and
+   rial is applied when money is *formatted*, so an invoice shows KWD 19.000. */
 export const monthly = (region, duration, per) =>
   Math.round(REGIONS[region].rates[duration] * per * (1 - discountFor(per)));
 

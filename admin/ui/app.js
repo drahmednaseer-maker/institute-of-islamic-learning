@@ -37,11 +37,16 @@ async function copy(text, label = 'Copied') {
     document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast(label);
   }
 }
+const SYMBOLS = { USD: '$', GBP: '£', EUR: '€', CAD: 'C$', AUD: 'A$', PKR: 'Rs',
+  SAR: 'SAR ', AED: 'AED ', QAR: 'QAR ', KWD: 'KWD ', OMR: 'OMR ', BHD: 'BHD ' };
+/* the Gulf dinars and the Omani rial are quoted to three decimals */
+const DECIMALS = { KWD: 3, OMR: 3, BHD: 3 };
 const money = (n, c) => {
-  const sym = { USD: '$', GBP: '£', EUR: '€', CAD: 'C$', AUD: 'A$', PKR: 'Rs', SAR: 'SAR ', AED: 'AED ' }[c] || `${c} `;
+  const sym = SYMBOLS[c] || `${c} `;
   const v = Number(n || 0);
+  const d = DECIMALS[c] ?? 2;
   /* the sign belongs outside the symbol: -$30.00, not $-30.00 */
-  return `${v < 0 ? '-' : ''}${sym}${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${v < 0 ? '-' : ''}${sym}${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d })}`;
 };
 const dt = (v) => (v ? new Date(v).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 const chip = (v) => el('span', { class: `chip chip--${v}` }, v);
@@ -318,7 +323,7 @@ async function invoiceForm(id = null) {
     const f = formFields([
       ['client_name', 'Client name', 'text', true], ['client_phone', 'Client phone'], ['client_email', 'Client email', 'email'],
     ], existing || {});
-    const currency = el('select', {}, ...['USD', 'GBP', 'EUR', 'CAD', 'AUD', 'PKR', 'SAR', 'AED'].map((c) =>
+    const currency = el('select', {}, ...pricing.currencies.map((c) =>
       el('option', { value: c, selected: (existing?.currency || 'USD') === c || null }, c)));
     const issue = el('input', { type: 'date', value: existing?.issue_date || today() });
     const due = el('input', { type: 'date', value: existing?.due_date || '' });
@@ -466,12 +471,13 @@ async function expenseForm(heads = null, e = null) {
   if (!heads) ({ heads } = await api(`/expenses?month=${expMonth}`));
   const { tutors } = await api('/tutors');
   const settings = await api('/settings');
+  const { currencies } = await api('/pricing/regions');
   drawer(e ? 'Edit expense' : 'Record expense', (body, close) => {
     const date = el('input', { type: 'date', value: e?.date || today() });
     const head_ = el('select', {}, ...heads.map((h) => el('option', { value: h, selected: e?.head === h || null }, h)));
     const desc = el('input', { value: e?.description || '', placeholder: 'What was it for?' });
     const amount = el('input', { type: 'number', step: '0.01', value: e?.amount ?? '', placeholder: '0.00' });
-    const cur = el('select', {}, ...['PKR', 'USD', 'GBP', 'EUR', 'CAD', 'AUD', 'SAR', 'AED'].map((c) =>
+    const cur = el('select', {}, ...currencies.map((c) =>
       el('option', { value: c, selected: (e?.currency || settings.base_currency) === c || null }, c)));
     const tutor = el('select', {}, el('option', { value: '' }, '—'),
       ...tutors.map((t) => el('option', { value: t.id, selected: e?.tutor_id === t.id || null }, t.name)));

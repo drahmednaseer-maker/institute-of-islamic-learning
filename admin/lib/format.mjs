@@ -6,13 +6,17 @@
    open an italic run inside WhatsApp's markup. */
 export const refOf = (id) => String(id).replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase();
 
-const SYMBOLS = { USD: '$', GBP: '£', EUR: '€', CAD: 'C$', AUD: 'A$', PKR: 'Rs', SAR: 'SAR ', AED: 'AED ' };
+const SYMBOLS = { USD: '$', GBP: '£', EUR: '€', CAD: 'C$', AUD: 'A$', PKR: 'Rs',
+  SAR: 'SAR ', AED: 'AED ', QAR: 'QAR ', KWD: 'KWD ', OMR: 'OMR ', BHD: 'BHD ' };
+/* the Gulf dinars and the Omani rial are quoted to three decimals */
+const DECIMALS = { KWD: 3, OMR: 3, BHD: 3 };
 export const symbolFor = (code) => SYMBOLS[code] || `${code} `;
 
 export function money(amount, currency = 'USD') {
   const n = Number(amount || 0);
   /* the sign belongs outside the symbol: -$30.00, not $-30.00 */
-  const body = Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const d = DECIMALS[currency] ?? 2;
+  const body = Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
   return `${n < 0 ? '-' : ''}${symbolFor(currency)}${body}`;
 }
 
