@@ -243,3 +243,16 @@ label.f>span{display:block;font-size:.76rem;font-weight:650;color:var(--dim);mar
   text-transform:uppercase;letter-spacing:.08em;padding:.15rem .5rem;border-radius:99px}
 .pv__amt{font-size:1.5rem;font-weight:700;margin:.3rem 0 .15rem;font-variant-numeric:tabular-nums}
 .pv__amt small{font-size:.72rem;font-weight:500;color:var(--dim);margin-left:.2rem}
+
+/* course editor */
+.iconpick{display:flex;align-items:center;gap:.5rem}
+.iconpick__art{display:grid;place-items:center;width:2.3rem;height:2.3rem;flex:0 0 auto;
+  border:1.5px solid var(--line);border-radius:9px;background:var(--green-50)}
+.iconpick__art svg{width:1.2rem;height:1.2rem;fill:var(--green-800)}
+.chk{display:flex;align-items:center;gap:.45rem;font-size:.86rem;cursor:pointer}
+.chk input{width:15px;height:15px;accent-color:var(--green-800);cursor:pointer}
+.plan-edit .btn[disabled]{opacity:.4;pointer-events:none}
+@media(max-width:560px){
+  .plan-edit__head{flex-wrap:wrap;gap:.5rem}
+  .plan-edit__head b{width:100%}
+}

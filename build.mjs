@@ -7,7 +7,13 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REGIONS, DURATIONS, PLANS, monthly, planExtras, sharedFeatures } from './src/data/pricing.mjs';
 import { CONTACT, SOCIAL, TRIAL, LEADS_ENDPOINT } from './src/data/site.mjs';
+import { COURSES, iconPath } from './src/data/courses.mjs';
 
+const NUMBER_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+/* so that "all eight courses" can never become a lie after an edit */
+const COURSE_COUNT = NUMBER_WORDS[COURSES.length] || String(COURSES.length);
+const COURSE_LIST = COURSES.map((c) => c.name).reduce((acc, n, i, all) =>
+  (i === 0 ? n : i === all.length - 1 ? `${acc} and ${n}` : `${acc}, ${n}`), '');
 const root = dirname(fileURLToPath(import.meta.url));
 const SRC = join(root, 'src');
 /* the admin panel builds into a staging folder and swaps it in, so a rebuild
@@ -70,6 +76,62 @@ function renderSocials() {
 }
 
 const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 16.2 5.4 12l-1.4 1.4 5.6 5.6L20.4 8.2 19 6.8z"/></svg>';
+const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h14.2l-4.6-4.6L15 6l7 6-7 6-1.4-1.4 4.6-4.6H4z"/></svg>';
+
+/* Courses are stored as plain text so the admin panel can edit them as prose;
+   everything that reaches HTML is escaped here. */
+const escHTML = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const courseIcon = (name) => `<span class="course__ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${iconPath(name)}"/></svg></span>`;
+const tagRow = (tags) => (tags || []).map((t) => `<span class="tag">${escHTML(t)}</span>`).join('');
+
+const renderCourseIndex = () => COURSES.map((c) => `<a href="#${c.id}">${escHTML(c.short)}</a>`).join('\n  ');
+
+const renderCourseCards = () => COURSES.map((c, i) => `<article class="card course reveal"${i % 2 ? ' data-delay="60"' : ''} id="${c.id}">
+      <div class="course__top">
+        ${courseIcon(c.icon)}
+        <div><h2 class="h3">${escHTML(c.name)}</h2><p class="course__ar">${escHTML(c.arabic)}</p></div>
+      </div>
+      <p>${escHTML(c.intro)}</p>${(c.covers || []).length ? `
+      <details class="course__more" open>
+        <summary>What you&rsquo;ll cover</summary>
+        <ul class="ticklist">
+        ${c.covers.map((f) => `<li>${CHECK}<span>${escHTML(f)}</span></li>`).join('\n        ')}
+      </ul>
+      </details>` : ''}
+      <div class="course__meta">${tagRow(c.tags)}</div>
+      <a class="btn btn--gold btn--sm" href="/contact#book" data-book>${escHTML(c.cta)}</a>
+    </article>`).join('\n\n    ');
+
+const renderCourseHome = () => COURSES.filter((c) => c.onHome).map((c, i) => `<article class="card course reveal"${i % 3 ? ` data-delay="${(i % 3) * 60}"` : ''}>
+        <div class="course__top">
+          ${courseIcon(c.icon)}
+          <div><h3 class="h3">${escHTML(c.name)}</h3><p class="course__ar">${escHTML(c.arabic)}</p></div>
+        </div>
+        <p>${escHTML(c.summary)}</p>
+        <div class="course__meta">${tagRow(c.tags)}</div>
+        <a class="course__link" href="/courses#${c.id}">Course details ${ARROW}</a>
+      </article>`).join('\n\n      ');
+
+const renderCourseMenu = () => COURSES.map((c) =>
+  `<li><a href="/courses#${c.id}"><span class="mm__t">${escHTML(c.name)}</span><span class="mm__d">${escHTML(c.menuBlurb)}</span></a></li>`).join('\n              ');
+
+const renderCourseMenuMobile = () => COURSES.map((c) =>
+  `<li><a href="/courses#${c.id}">${escHTML(c.short)}</a></li>`).join('\n            ');
+
+const renderCourseFooter = () => COURSES.filter((c) => c.inFooter).map((c) =>
+  `<li><a href="/courses#${c.id}">${escHTML(c.name)}</a></li>`).join('\n        ');
+
+const renderCourseOptions = () => COURSES.map((c) => `<option>${escHTML(c.formLabel)}</option>`).join('');
+
+/* Google reads this; it takes the text raw, not HTML-escaped. */
+const renderCourseSchema = () => COURSES.map((c, i) => JSON.stringify({
+  '@type': 'ListItem', position: i + 1,
+  item: {
+    '@type': 'Course', name: c.name, description: c.seo || c.summary,
+    provider: { '@type': 'EducationalOrganization', name: 'Institute of Islamic Learning' },
+    hasCourseInstance: { '@type': 'CourseInstance', courseMode: 'online', courseWorkload: 'PT2H' },
+  },
+})).join(',\n');
 
 /* Build every region x duration pricing panel plus the JSON the calculator reads. */
 function renderPricing() {
@@ -145,6 +207,9 @@ for (const file of pageFiles) {
     trialClasses: String(TRIAL.classes),
     trialWord: TRIAL.word,
     TrialWord: TRIAL.Word,
+    courseCount: COURSE_COUNT,
+    CourseCount: COURSE_COUNT[0].toUpperCase() + COURSE_COUNT.slice(1),
+    courseList: COURSE_LIST,
   };
   const vars = {
     ...trial,
@@ -172,6 +237,14 @@ for (const file of pageFiles) {
   html = html.replace('<!--PRICING-->', renderPricing);
   html = html.replace('<!--CALC_REGIONS-->', () =>
     Object.entries(REGIONS).map(([k, r]) => `<option value="${k}">${r.label} (${r.code})</option>`).join(''));
+  html = html.replace('<!--COURSE_INDEX-->', renderCourseIndex);
+  html = html.replace('<!--COURSE_CARDS-->', renderCourseCards);
+  html = html.replace('<!--COURSE_HOME-->', renderCourseHome);
+  html = html.replace('<!--COURSE_MENU-->', renderCourseMenu);
+  html = html.replace('<!--COURSE_MENU_MOBILE-->', renderCourseMenuMobile);
+  html = html.replace('<!--COURSE_FOOTER-->', renderCourseFooter);
+  html = html.replaceAll('<!--COURSE_OPTIONS-->', renderCourseOptions);
+  html = html.replace('<!--COURSE_SCHEMA-->', renderCourseSchema);
   html = html.replace('<!--CALC_PERWEEK-->', () => {
     const mid = PLANS[Math.min(2, PLANS.length - 1)];
     return PLANS.map((p) => `<option value="${p.per}"${p === mid ? ' selected' : ''}>${p.per} ${p.per === 1 ? 'class' : 'classes'}</option>`).join('');

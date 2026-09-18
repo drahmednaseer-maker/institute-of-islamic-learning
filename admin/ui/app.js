@@ -80,6 +80,7 @@ const VIEWS = [
   { id: 'invoices', label: 'Invoices', badge: 'unpaid' },
   { id: 'expenses', label: 'Expenses' },
   { id: 'pnl', label: 'Profit & Loss' },
+  { id: 'courses', label: 'Courses' },
   { id: 'pricing', label: 'Fees & Plans' },
   { id: 'security', label: 'Password' },
   { id: 'settings', label: 'Settings' },
@@ -818,6 +819,135 @@ function startWatching() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden) pollEnquiries(); });
 }
 
+/* ---------------- courses ---------------- */
+/* One course is described once here and appears on the courses page, the home
+   grid, both menus, the footer, the booking form and the fee calculator. */
+const COURSE_ICONS = {
+  book: 'M21 5c-1.9-.9-4-1.4-6-1.4S11 4.1 9 5v14c2-.9 4-1.4 6-1.4s4.1.5 6 1.4zM3 5v14c1.9-.9 3-1.4 5-1.4V3.6C6 3.6 4.9 4.1 3 5',
+  mic: 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3m7 9a7 7 0 0 1-6 6.9V22h-2v-3.1A7 7 0 0 1 5 12h2a5 5 0 0 0 10 0z',
+  shield: 'M12 2 4 6v6c0 5 3.4 9.4 8 10 4.6-.6 8-5 8-10V6zm3.5 7.6-4.3 4.3a1 1 0 0 1-1.4 0L7.6 11.7 9 10.3l1.5 1.5 3.6-3.6z',
+  cube: 'M12 2 3 7v10l9 5 9-5V7zm0 4.2 5.2 2.9L12 12l-5.2-2.9zM5 9.8l6 3.4v5.9l-6-3.3zm8 9.3v-5.9l6-3.4v6z',
+  globe: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20M4.3 13h3.2c.1 1.9.5 3.7 1.1 5.2A8 8 0 0 1 4.3 13m3.2-2H4.3a8 8 0 0 1 4.3-5.2c-.6 1.5-1 3.3-1.1 5.2m8.9 0c-.1-1.9-.5-3.7-1.1-5.2A8 8 0 0 1 19.7 11zm-2 0H9.6c.1-2.1.6-4 1.4-5.3.3-.5.7-.7 1-.7s.7.2 1 .7c.8 1.3 1.3 3.2 1.4 5.3m0 2c-.1 2.1-.6 4-1.4 5.3-.3.5-.7.7-1 .7s-.7-.2-1-.7c-.8-1.3-1.3-3.2-1.4-5.3zm2 0h3.3a8 8 0 0 1-4.4 5.2c.6-1.5 1-3.3 1.1-5.2',
+  chat: 'M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-6l-4 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2m3 4v2h10V8zm0 4v2h7v-2z',
+  star: 'M12 2 9.5 8.5 3 9.6l4.8 4.4-1.3 6.6L12 17.4l5.5 3.2-1.3-6.6L21 9.6l-6.5-1.1z',
+  badge: 'M12 2 4 5.5v5.9c0 4.6 3.4 8.9 8 10.1 4.6-1.2 8-5.5 8-10.1V5.5zm0 4a3 3 0 1 1 0 6 3 3 0 0 1 0-6m0 8c2.2 0 4 1.1 4 2.4V18H8v-1.6c0-1.3 1.8-2.4 4-2.4',
+  pen: 'M3 17.2V21h3.8L17.8 10 14 6.2zm17.7-10.5a1 1 0 0 0 0-1.4l-2-2a1 1 0 0 0-1.4 0l-1.8 1.8L19.3 8.9z',
+  heart: 'M12 21s-7.5-4.6-9.3-9A5.2 5.2 0 0 1 12 6.6 5.2 5.2 0 0 1 21.3 12c-1.8 4.4-9.3 9-9.3 9',
+};
+const courseIcon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${COURSE_ICONS[name] || COURSE_ICONS.book}"/></svg>`;
+
+async function viewCourses(view) {
+  const data = await api('/courses');
+  const C = data.courses;
+
+  const bind = (obj, key, attrs = {}, after) => {
+    const node = attrs.tag === 'textarea'
+      ? el('textarea', { rows: attrs.rows || 3, placeholder: attrs.placeholder || '' })
+      : el('input', { value: obj[key] ?? '', ...attrs });
+    if (attrs.tag === 'textarea') node.value = obj[key] ?? '';
+    on(node, 'input', () => { obj[key] = node.value; if (after) after(); });
+    return node;
+  };
+  const labelled = (text, node, hint) => el('label', { class: 'f' }, el('span', {}, text), node,
+    hint ? el('small', { class: 'hint' }, hint) : null);
+  const listField = (obj, key, label, hint) => {
+    const ta = el('textarea', { rows: 3 });
+    ta.value = (obj[key] || []).join('\n');
+    on(ta, 'input', () => { obj[key] = ta.value.split('\n').map((l) => l.trim()).filter(Boolean); });
+    return labelled(label, ta, hint);
+  };
+  const check = (obj, key, text) => {
+    const box = el('input', { type: 'checkbox', checked: obj[key] ? '' : null });
+    on(box, 'change', () => { obj[key] = box.checked; });
+    return el('label', { class: 'chk' }, box, el('span', {}, text));
+  };
+
+  const listBox = el('div', { class: 'plan-list' });
+  const draw = () => {
+    listBox.replaceChildren(...C.map((c, i) => {
+      const iconWrap = el('div', { class: 'iconpick__art', html: courseIcon(c.icon) });
+      const iconSel = el('select', {}, ...data.icons.map((n) =>
+        el('option', { value: n, selected: n === c.icon || null }, n)));
+      on(iconSel, 'change', () => { c.icon = iconSel.value; iconWrap.innerHTML = courseIcon(c.icon); });
+
+      return el('div', { class: 'plan-edit' },
+        el('div', { class: 'plan-edit__head' },
+          el('b', {}, `${i + 1}. ${c.name || 'New course'}`),
+          el('div', { class: 'row' },
+            el('button', { class: 'btn btn--ghost btn--sm', disabled: i === 0 || null,
+              onclick: () => { C.splice(i - 1, 0, C.splice(i, 1)[0]); draw(); } }, 'Move up'),
+            el('button', { class: 'btn btn--ghost btn--sm', disabled: i === C.length - 1 || null,
+              onclick: () => { C.splice(i + 1, 0, C.splice(i, 1)[0]); draw(); } }, 'Move down'),
+            el('button', { class: 'btn btn--danger btn--sm', onclick: () => {
+              if (C.length < 2) return toast('Keep at least one course');
+              if (!confirm(`Remove ${c.name} from the website?`)) return;
+              C.splice(i, 1); draw();
+            } }, 'Remove'))),
+
+        el('div', { class: 'fields' },
+          labelled('Course name', bind(c, 'name', { maxlength: 80 })),
+          labelled('Arabic name', bind(c, 'arabic', { maxlength: 80, dir: 'rtl' })),
+          labelled('Short label', bind(c, 'short', { maxlength: 40 }), 'Used in the menus'),
+          labelled('Icon', el('div', { class: 'iconpick' }, iconWrap, iconSel))),
+
+        labelled('One line for the Courses menu', bind(c, 'menuBlurb', { maxlength: 80, placeholder: 'Letters, sounds & the first steps' })),
+        labelled('Short description (home page card)', bind(c, 'summary', { tag: 'textarea', rows: 2 })),
+        labelled('Full description (courses page)', bind(c, 'intro', { tag: 'textarea', rows: 3 })),
+
+        el('div', { class: 'fields' },
+          listField(c, 'covers', 'What you’ll cover', 'One per line'),
+          listField(c, 'tags', 'Tags', 'One per line')),
+
+        el('div', { class: 'fields' },
+          labelled('Button label', bind(c, 'cta', { maxlength: 40 })),
+          labelled('Name in the booking form', bind(c, 'formLabel', { maxlength: 80 })),
+          labelled('Description for search engines', bind(c, 'seo', { maxlength: 200 }))),
+
+        el('div', { class: 'row' }, check(c, 'onHome', 'Show on the home page'), check(c, 'inFooter', 'Show in the footer')));
+    }));
+  };
+
+  const msg = el('p', { class: 'err' });
+  const publish = el('button', { class: 'btn btn--gold' }, 'Publish to the website');
+  on(publish, 'click', async () => {
+    msg.textContent = ''; publish.disabled = true; publish.textContent = 'Publishing…';
+    try {
+      const saved = await api('/courses', { method: 'PUT', body: { courses: C } });
+      toast(saved.published ? 'Published — the website is updated' : 'Saved, but the website did not rebuild');
+      if (!saved.published) msg.textContent = `The site could not be rebuilt: ${saved.log || 'unknown error'}`;
+      else viewCourses(view);
+    } catch (err) { msg.textContent = err.message; }
+    finally { publish.disabled = false; publish.textContent = 'Publish to the website'; }
+  });
+
+  const reset = el('button', { class: 'btn btn--ghost' }, 'Restore original courses');
+  on(reset, 'click', async () => {
+    if (!confirm('Put every course back to the one the site launched with?')) return;
+    try { const r = await api('/courses/reset', { method: 'POST' }); toast(r.published ? 'Restored and published' : 'Restored'); viewCourses(view); }
+    catch (err) { msg.textContent = err.message; }
+  });
+
+  draw();
+
+  view.replaceChildren(
+    head('Courses',
+      data.custom ? `Your own courses · last published ${dt(data.updated_at)}` : 'Showing the courses the site launched with',
+      reset, publish),
+    msg,
+    el('div', { class: 'card' },
+      el('p', { class: 'muted', style: 'margin:0' },
+        'Each course below fills the courses page, the home grid, the Courses menu, the footer list, the booking form and the fee calculator. Nothing changes on the website until you publish.')),
+    listBox,
+    el('div', { class: 'row', style: 'margin-top:.9rem' },
+      el('button', { class: 'btn btn--ghost', onclick: () => {
+        C.push({ id: '', icon: 'book', name: '', arabic: '', short: '', menuBlurb: '', summary: '', intro: '',
+          covers: [], tags: [], cta: 'Start free trial', formLabel: '', seo: '', onHome: true, inFooter: true });
+        draw();
+        listBox.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } }, 'Add a course')),
+  );
+}
+
 /* ---------------- fees & plans ---------------- */
 /* Everything the public pricing page shows, editable here. Saving writes the
    figures next to the database and rebuilds the site, so the change is live. */
@@ -1003,7 +1133,7 @@ async function viewPricing(view) {
 }
 
 /* ---------------- router ---------------- */
-const RENDER = { dashboard: viewDashboard, leads: viewLeads, tutors: viewTutors, invoices: viewInvoices, expenses: viewExpenses, pnl: viewPnl, pricing: viewPricing, security: viewSecurity, settings: viewSettings };
+const RENDER = { dashboard: viewDashboard, leads: viewLeads, tutors: viewTutors, invoices: viewInvoices, expenses: viewExpenses, pnl: viewPnl, courses: viewCourses, pricing: viewPricing, security: viewSecurity, settings: viewSettings };
 
 async function route() {
   document.querySelectorAll('.drawer').forEach((d) => d.remove());   /* never leave one open across views */

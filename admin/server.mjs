@@ -11,7 +11,9 @@ import { isAuthed, issueCookie, clearCookie, checkPassword, setPassword, hasPass
 import { formatLead, formatLeadOneLine, formatInvoice, formatTutor, waLink, money, prettyDate } from './lib/format.mjs';
 import { invoiceHTML } from './lib/invoice-html.mjs';
 import { sendMail, mailReady, mailConfig, mailMissing } from './lib/mail.mjs';
-import { livePricing, priceOf, savePricing, clearPricing, rebuildSite, hasPricingOverride } from './lib/pricing.mjs';
+import { livePricing, priceOf, savePricing, clearPricing, hasPricingOverride } from './lib/pricing.mjs';
+import { liveCourses, saveCourses, clearCourses, hasCoursesOverride, ICON_NAMES } from './lib/courses.mjs';
+import { rebuildSite } from './lib/site-build.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const UI = join(here, 'ui');
@@ -437,6 +439,59 @@ route('PUT', /^\/api\/pricing$/, async (req, res) => {
   return ok(res, { ...livePricing(), published: build.ok, log: build.ok ? '' : build.log.slice(-400) });
 });
 
+/* --- courses: edited here, published to every page that lists them --- */
+route('GET', /^\/api\/courses$/, async (_req, res) => ok(res, liveCourses()));
+
+const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,39}$/;
+const slugify = (v) => String(v).toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '').slice(0, 40);
+
+route('PUT', /^\/api\/courses$/, async (req, res) => {
+  const b = await readBody(req);
+  const lines = (v, max) => (Array.isArray(v) ? v : String(v || '').split('\n'))
+    .map((x) => str(x, 200)).filter(Boolean).slice(0, max);
+
+  const courses = [];
+  const seen = new Set();
+  for (const c of Array.isArray(b.courses) ? b.courses : []) {
+    const name = str(c?.name, 80);
+    if (!name) return bad(res, 'Every course needs a name');
+    /* the id is the #anchor every menu links to, so it may not collide */
+    let id = SLUG_RE.test(String(c?.id || '')) ? String(c.id) : slugify(c?.id || name);
+    if (!id) id = `course-${courses.length + 1}`;
+    while (seen.has(id)) id = `${id}-2`;
+    seen.add(id);
+    courses.push({
+      id, name,
+      icon: ICON_NAMES.includes(c?.icon) ? c.icon : 'book',
+      arabic: str(c?.arabic, 80) || '',
+      short: str(c?.short, 40) || name,
+      menuBlurb: str(c?.menuBlurb, 80) || '',
+      summary: str(c?.summary, 400) || '',
+      intro: str(c?.intro, 700) || '',
+      covers: lines(c?.covers, 8),
+      tags: lines(c?.tags, 6),
+      cta: str(c?.cta, 40) || 'Start free trial',
+      formLabel: str(c?.formLabel, 80) || name,
+      seo: str(c?.seo, 200) || '',
+      onHome: c?.onHome !== false,
+      inFooter: c?.inFooter !== false,
+    });
+  }
+  if (!courses.length) return bad(res, 'Keep at least one course');
+  if (courses.length > 24) return bad(res, 'That is more courses than the menus can show');
+
+  saveCourses(courses);
+  const build = await rebuildSite();
+  return ok(res, { ...liveCourses(), published: build.ok, log: build.ok ? '' : build.log.slice(-400) });
+});
+
+route('POST', /^\/api\/courses\/reset$/, async (_req, res) => {
+  clearCourses();
+  const build = await rebuildSite();
+  return ok(res, { ...liveCourses(), published: build.ok, log: build.ok ? '' : build.log.slice(-400) });
+});
+
 route('POST', /^\/api\/pricing\/reset$/, async (_req, res) => {
   clearPricing();
   const build = await rebuildSite();
@@ -677,11 +732,11 @@ const server = createServer(async (req, res) => {
 });
 
 /* dist/ is built at deploy time, before the data volume is mounted — so prices
-   saved in the backend would be missing from a freshly deployed site. Rebuild
-   once at boot when there is an override to apply. */
-if (hasPricingOverride()) {
+   and courses saved in the backend would be missing from a freshly deployed
+   site. Rebuild once at boot when there is an override to apply. */
+if (hasPricingOverride() || hasCoursesOverride()) {
   const build = await rebuildSite();
-  console.log(build.ok ? '  Rebuilt the site with your saved fee plans' : `  Could not rebuild the site: ${build.log}`);
+  console.log(build.ok ? '  Rebuilt the site with your saved courses and fee plans' : `  Could not rebuild the site: ${build.log}`);
 }
 
 server.listen(PORT, () => console.log(`  Admin backend on http://localhost:${PORT}\n`));
