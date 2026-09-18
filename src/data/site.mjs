@@ -35,5 +35,7 @@ export const TRIAL = {
   Word: 'Five',
 };
 
-/* Where the booking form posts. Leave empty to fall back to WhatsApp only. */
-export const LEADS_ENDPOINT = 'https://iil-admin-production.up.railway.app/api/public/leads';
+/* Where the booking form posts. Relative, because the site and the admin
+   backend are served from the same Railway service — so it follows the
+   custom domain automatically. Leave empty to fall back to WhatsApp only. */
+export const LEADS_ENDPOINT = '/api/public/leads';

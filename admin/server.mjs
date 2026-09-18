@@ -2,7 +2,7 @@
    Plain node:http + node:sqlite — no dependencies. */
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { join, extname, dirname } from 'node:path';
+import { join, extname, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
 import { db, newId, nowISO, getSetting, setSetting, nextInvoiceNumber, getInvoice, invoiceTotals } from './lib/db.mjs';
@@ -12,6 +12,7 @@ import { invoiceHTML } from './lib/invoice-html.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const UI = join(here, 'ui');
+const SITE = join(here, '..', 'dist');   /* the public website, built by build.mjs */
 const PORT = Number(process.env.PORT || 4400);
 
 /* First boot: make sure there is a password rather than an open admin. */
@@ -456,7 +457,16 @@ const corsFor = (req) => {
   };
 };
 
+const SECURITY = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+};
+
 const server = createServer(async (req, res) => {
+  for (const [k, v] of Object.entries(SECURITY)) res.setHeader(k, v);
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const path = url.pathname;
 
@@ -486,21 +496,47 @@ const server = createServer(async (req, res) => {
     return res.end(invoiceHTML(inv, orgSettings()));
   }
 
-  /* static admin UI */
-  const rel = path === '/' ? 'index.html' : path.replace(/^\/+/, '');
-  const file = join(UI, rel);
-  if (!file.startsWith(UI)) return bad(res, 'Not found', 404);
-  try {
-    const body = await readFile(file);
-    res.writeHead(200, { 'Content-Type': TYPES[extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
-    return res.end(body);
-  } catch {
+  /* ---- admin UI, under /admin so it cannot collide with the site ---- */
+  if (path === '/admin' || path.startsWith('/admin/')) {
+    const rel = path === '/admin' || path === '/admin/' ? 'index.html' : path.slice('/admin/'.length);
+    const file = join(UI, rel);
+    const headers = { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' };
+    if (file.startsWith(UI)) {
+      try {
+        const body = await readFile(file);
+        res.writeHead(200, { 'Content-Type': TYPES[extname(file)] || 'application/octet-stream', ...headers });
+        return res.end(body);
+      } catch {}
+    }
+    /* unknown path inside the admin: hand back the shell, it routes on the hash */
     try {
       const body = await readFile(join(UI, 'index.html'));
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', ...headers });
       return res.end(body);
     } catch { return bad(res, 'Not found', 404); }
   }
+
+  /* ---- the public website, with Vercel's clean-URL behaviour ---- */
+  const clean = path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path;
+  const base = join(SITE, clean === '/' ? 'index.html' : clean.replace(/^\/+/, ''));
+  if (base.startsWith(SITE)) {
+    for (const candidate of [base, `${base}.html`, join(base, 'index.html')]) {
+      try {
+        const body = await readFile(candidate);
+        const immutable = candidate.includes(`${sep}assets${sep}`);
+        res.writeHead(200, {
+          'Content-Type': TYPES[extname(candidate)] || 'application/octet-stream',
+          'Cache-Control': immutable ? 'public, max-age=31536000, immutable' : 'public, max-age=0, must-revalidate',
+        });
+        return res.end(body);
+      } catch {}
+    }
+  }
+  try {
+    const body = await readFile(join(SITE, '404.html'));
+    res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end(body);
+  } catch { return bad(res, 'Not found', 404); }
 });
 
 server.listen(PORT, () => console.log(`  Admin backend on http://localhost:${PORT}\n`));

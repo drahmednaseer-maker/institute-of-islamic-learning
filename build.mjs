@@ -11,7 +11,9 @@ import { CONTACT, SOCIAL, TRIAL, LEADS_ENDPOINT } from './src/data/site.mjs';
 const root = dirname(fileURLToPath(import.meta.url));
 const SRC = join(root, 'src');
 const OUT = join(root, 'dist');
-const SITE = 'https://institute-of-islamic-learning.vercel.app';
+/* Set SITE_URL in the deploy environment; it drives canonical links, OG tags
+   and the sitemap. Change it once a custom domain is attached. */
+const SITE = (process.env.SITE_URL || 'https://institute-of-islamic-learning.vercel.app').replace(/\/$/, '');
 
 const read = (p) => readFileSync(p, 'utf8');
 const partial = (n) => read(join(SRC, 'partials', `${n}.html`));

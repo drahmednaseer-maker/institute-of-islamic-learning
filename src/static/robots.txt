@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /invoice/
 
 Sitemap: https://institute-of-islamic-learning.vercel.app/sitemap.xml

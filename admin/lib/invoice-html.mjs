@@ -25,8 +25,8 @@ export function invoiceHTML(inv, org = {}) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(inv.number)} · ${esc(org.org_name || 'Invoice')}</title>
 <style>
-@font-face{font-family:Amiri;src:url(/fonts/amiri-400-latin.woff2) format("woff2");font-weight:400;font-display:swap}
-@font-face{font-family:Amiri;src:url(/fonts/amiri-700-latin.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:Amiri;src:url(/admin/fonts/amiri-400-latin.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:Amiri;src:url(/admin/fonts/amiri-700-latin.woff2) format("woff2");font-weight:700;font-display:swap}
 :root{--ink:#16130F;--dim:#6A645A;--line:#E2DCD0;--green:#0B3B2E;--gold:#B27F2C;--paid:#1E7A4D;--red:#C0392B}
 *,*::before,*::after{box-sizing:border-box}*{margin:0}
 body{font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#EDEAE3;padding:24px}
@@ -89,13 +89,13 @@ tbody tr:nth-child(even){background:#FBF9F5}
 <body>
 <div class="bar">
   <button class="go" onclick="window.print()">Print / Save as PDF</button>
-  <a href="/#invoices">Back to invoices</a>
+  <a href="/admin#invoices">Back to invoices</a>
 </div>
 
 <div class="sheet">
   <div class="top">
     <div class="brand">
-      <img src="/logo.jpg" alt="">
+      <img src="/admin/logo.jpg" alt="">
       <div>
         <div class="sub">Institute of</div>
         <h1>${esc((org.org_name || 'Islamic Learning').replace(/^Institute of\s*/i, ''))}</h1>
