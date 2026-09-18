@@ -266,31 +266,31 @@ for (const file of pageFiles) {
   /* insert the page body first so partial includes inside it expand too */
   let html = layout.replace('{{content}}', () => body).replace('{{schema}}', () => vars.schema);
   html = expand(html);
-  html = html.replace('<!--SOCIALS-->', renderSocials);
+  html = html.replaceAll('<!--SOCIALS-->', renderSocials);
   html = sections(html, vars);
   html = fill(html, vars);
-  html = html.replace('<!--PRICING-->', renderPricing);
-  html = html.replace('<!--CALC_REGIONS-->', () =>
+  html = html.replaceAll('<!--PRICING-->', renderPricing);
+  html = html.replaceAll('<!--CALC_REGIONS-->', () =>
     Object.entries(REGIONS).map(([k, r]) => `<option value="${k}">${r.label} (${r.code})</option>`).join(''));
-  html = html.replace('<!--COURSE_INDEX-->', renderCourseIndex);
-  html = html.replace('<!--COURSE_CARDS-->', renderCourseCards);
-  html = html.replace('<!--COURSE_HOME-->', renderCourseHome);
-  html = html.replace('<!--COURSE_MENU-->', renderCourseMenu);
-  html = html.replace('<!--COURSE_MENU_MOBILE-->', renderCourseMenuMobile);
-  html = html.replace('<!--COURSE_FOOTER-->', renderCourseFooter);
+  html = html.replaceAll('<!--COURSE_INDEX-->', renderCourseIndex);
+  html = html.replaceAll('<!--COURSE_CARDS-->', renderCourseCards);
+  html = html.replaceAll('<!--COURSE_HOME-->', renderCourseHome);
+  html = html.replaceAll('<!--COURSE_MENU-->', renderCourseMenu);
+  html = html.replaceAll('<!--COURSE_MENU_MOBILE-->', renderCourseMenuMobile);
+  html = html.replaceAll('<!--COURSE_FOOTER-->', renderCourseFooter);
   html = html.replaceAll('<!--COURSE_OPTIONS-->', renderCourseOptions);
-  html = html.replace('<!--COURSE_SCHEMA-->', renderCourseSchema);
-  html = html.replace('<!--TEACHERS-->', renderTeachers);
-  html = html.replace('<!--PLAN_DAYS-->', () => {
+  html = html.replaceAll('<!--COURSE_SCHEMA-->', renderCourseSchema);
+  html = html.replaceAll('<!--TEACHERS-->', renderTeachers);
+  html = html.replaceAll('<!--PLAN_DAYS-->', () => {
     const pick = PLANS.find((p) => p.badge) || PLANS[Math.floor(PLANS.length / 2)];
     return PLANS.map((p) => `<option${p === pick ? ' selected' : ''}>${p.per} classes per week</option>`).join('');
   });
-  html = html.replace('<!--CALC_DURATION-->', () => (DURATIONS.length > 1
+  html = html.replaceAll('<!--CALC_DURATION-->', () => (DURATIONS.length > 1
     ? `<label class="field field--half"><span class="field__label">Class length</span><select name="duration">${
       DURATIONS.map((d, i) => `<option value="${d}"${i ? '' : ' selected'}>${d} minutes</option>`).join('')
     }</select></label>`
     : `<input type="hidden" name="duration" value="${DURATIONS[0]}">`));
-  html = html.replace('<!--CALC_PERWEEK-->', () => {
+  html = html.replaceAll('<!--CALC_PERWEEK-->', () => {
     const pick = PLANS.find((p) => p.badge) || PLANS[Math.floor(PLANS.length / 2)];
     return PLANS.map((p) => `<option value="${p.per}"${p === pick ? ' selected' : ''}>${p.per} ${p.per === 1 ? 'class' : 'classes'}</option>`).join('');
   });
