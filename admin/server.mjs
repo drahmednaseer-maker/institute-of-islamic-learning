@@ -13,6 +13,7 @@ import { invoiceHTML } from './lib/invoice-html.mjs';
 import { sendMail, mailReady, mailConfig, mailMissing } from './lib/mail.mjs';
 import { livePricing, priceOf, savePricing, clearPricing, hasPricingOverride } from './lib/pricing.mjs';
 import { liveCourses, saveCourses, clearCourses, hasCoursesOverride, ICON_NAMES } from './lib/courses.mjs';
+import { liveTeam, saveTeam, clearTeam, hasTeamOverride } from './lib/team.mjs';
 import { rebuildSite } from './lib/site-build.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -439,6 +440,43 @@ route('PUT', /^\/api\/pricing$/, async (req, res) => {
   return ok(res, { ...livePricing(), published: build.ok, log: build.ok ? '' : build.log.slice(-400) });
 });
 
+/* --- the public "Our teachers" section --- */
+route('GET', /^\/api\/team$/, async (_req, res) => ok(res, liveTeam()));
+
+route('PUT', /^\/api\/team$/, async (req, res) => {
+  const b = await readBody(req);
+  const members = [];
+  for (const m of Array.isArray(b.members) ? b.members : []) {
+    const name = str(m?.name, 60);
+    if (!name) return bad(res, 'Every teacher needs a name');
+    members.push({
+      name,
+      /* the avatar is a single letter — usually the Arabic initial */
+      initial: [...(str(m?.initial, 8) || name)][0],
+      role: str(m?.role, 60) || '',
+      bio: str(m?.bio, 400) || '',
+    });
+  }
+  if (!members.length) return bad(res, 'Keep at least one teacher');
+  if (members.length > 24) return bad(res, 'That is more teachers than the section can show');
+
+  saveTeam({
+    eyebrow: str(b.eyebrow, 40) || 'Our teachers',
+    heading: str(b.heading, 100) || 'Our teachers',
+    lead: str(b.lead, 400) || '',
+    cta: str(b.cta, 40) || '',
+    members,
+  });
+  const build = await rebuildSite();
+  return ok(res, { ...liveTeam(), published: build.ok, log: build.ok ? '' : build.log.slice(-400) });
+});
+
+route('POST', /^\/api\/team\/reset$/, async (_req, res) => {
+  clearTeam();
+  const build = await rebuildSite();
+  return ok(res, { ...liveTeam(), published: build.ok, log: build.ok ? '' : build.log.slice(-400) });
+});
+
 /* --- courses: edited here, published to every page that lists them --- */
 route('GET', /^\/api\/courses$/, async (_req, res) => ok(res, liveCourses()));
 
@@ -731,12 +769,12 @@ const server = createServer(async (req, res) => {
   } catch { return bad(res, 'Not found', 404); }
 });
 
-/* dist/ is built at deploy time, before the data volume is mounted — so prices
-   and courses saved in the backend would be missing from a freshly deployed
-   site. Rebuild once at boot when there is an override to apply. */
-if (hasPricingOverride() || hasCoursesOverride()) {
+/* dist/ is built at deploy time, before the data volume is mounted — so
+   anything saved in the backend would be missing from a freshly deployed site.
+   Rebuild once at boot when there is an override to apply. */
+if (hasPricingOverride() || hasCoursesOverride() || hasTeamOverride()) {
   const build = await rebuildSite();
-  console.log(build.ok ? '  Rebuilt the site with your saved courses and fee plans' : `  Could not rebuild the site: ${build.log}`);
+  console.log(build.ok ? '  Rebuilt the site with your saved content' : `  Could not rebuild the site: ${build.log}`);
 }
 
 server.listen(PORT, () => console.log(`  Admin backend on http://localhost:${PORT}\n`));

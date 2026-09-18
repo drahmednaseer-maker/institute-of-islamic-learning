@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { REGIONS, DURATIONS, PLANS, monthly, planExtras, sharedFeatures } from './src/data/pricing.mjs';
 import { CONTACT, SOCIAL, TRIAL, LEADS_ENDPOINT } from './src/data/site.mjs';
 import { COURSES, iconPath } from './src/data/courses.mjs';
+import { TEAM } from './src/data/team.mjs';
 
 const NUMBER_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 /* so that "all eight courses" can never become a lie after an edit */
@@ -122,6 +123,21 @@ const renderCourseFooter = () => COURSES.filter((c) => c.inFooter).map((c) =>
   `<li><a href="/courses#${c.id}">${escHTML(c.name)}</a></li>`).join('\n        ');
 
 const renderCourseOptions = () => COURSES.map((c) => `<option>${escHTML(c.formLabel)}</option>`).join('');
+
+const renderTeachers = () => `<header class="section-head reveal">
+      <p class="eyebrow"><span aria-hidden="true">✦</span> ${escHTML(TEAM.eyebrow)}</p>
+      <h2 class="h2">${escHTML(TEAM.heading)}</h2>
+      <p class="lead">${escHTML(TEAM.lead)}</p>
+    </header>
+    <div class="grid grid--4">
+      ${TEAM.members.map((m, i) => `<div class="card teacher reveal"${i ? ` data-delay="${i * 60}"` : ''}>
+        <div class="teacher__ava" aria-hidden="true">${escHTML(m.initial)}</div>
+        <b>${escHTML(m.name)}</b>
+        <p class="role">${escHTML(m.role)}</p>
+        <p>${escHTML(m.bio)}</p>
+      </div>`).join('\n      ')}
+    </div>${TEAM.cta ? `
+    <p class="center" style="margin-top:2.25rem"><a class="btn btn--gold btn--lg" href="/contact#book" data-book>${escHTML(TEAM.cta)}</a></p>` : ''}`;
 
 /* Google reads this; it takes the text raw, not HTML-escaped. */
 const renderCourseSchema = () => COURSES.map((c, i) => JSON.stringify({
@@ -245,6 +261,7 @@ for (const file of pageFiles) {
   html = html.replace('<!--COURSE_FOOTER-->', renderCourseFooter);
   html = html.replaceAll('<!--COURSE_OPTIONS-->', renderCourseOptions);
   html = html.replace('<!--COURSE_SCHEMA-->', renderCourseSchema);
+  html = html.replace('<!--TEACHERS-->', renderTeachers);
   html = html.replace('<!--CALC_PERWEEK-->', () => {
     const mid = PLANS[Math.min(2, PLANS.length - 1)];
     return PLANS.map((p) => `<option value="${p.per}"${p === mid ? ' selected' : ''}>${p.per} ${p.per === 1 ? 'class' : 'classes'}</option>`).join('');

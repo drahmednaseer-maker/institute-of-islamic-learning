@@ -256,3 +256,9 @@ label.f>span{display:block;font-size:.76rem;font-weight:650;color:var(--dim);mar
   .plan-edit__head{flex-wrap:wrap;gap:.5rem}
   .plan-edit__head b{width:100%}
 }
+
+/* website teacher profiles */
+.teamrow{display:flex;align-items:flex-start;gap:.8rem}
+.ava{flex:0 0 auto;width:3rem;height:3rem;display:grid;place-items:center;border-radius:50%;
+  background:var(--green-800);color:var(--gold-300,#EFCE93);font-size:1.3rem;line-height:1;margin-top:1.15rem}
+@media(max-width:560px){.teamrow{flex-direction:column}.ava{margin-top:0}}

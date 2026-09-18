@@ -371,22 +371,131 @@ function formFields(defs, values = {}) {
 const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 
 /* ---------------- tutors ---------------- */
+let tutorTab = 'registry';
 async function viewTutors(view) {
+  const tabs = el('div', { class: 'filters' },
+    el('button', { class: tutorTab === 'registry' ? 'on' : '', onclick: () => { tutorTab = 'registry'; viewTutors(view); } }, 'Our tutors'),
+    el('button', { class: tutorTab === 'public' ? 'on' : '', onclick: () => { tutorTab = 'public'; viewTutors(view); } }, 'Shown on the website'));
+  if (tutorTab === 'public') return teamEditor(view, tabs);
+
   const { tutors } = await api('/tutors');
   view.replaceChildren(
-    head('Tutors', `${tutors.length} registered`, el('button', { class: 'btn btn--gold', onclick: () => tutorForm() }, 'Register tutor')),
+    head('Tutors', `${tutors.length} registered · private to you`, el('button', { class: 'btn btn--gold', onclick: () => tutorForm() }, 'Register tutor')),
+    tabs,
     tutors.length
       ? el('div', { class: 'card scroll' }, el('table', { class: 'tbl' },
           el('thead', {}, el('tr', {}, el('th', { class: 'sn' }, '#'), ...['Name', 'Phone', 'Subjects', 'Languages', 'Timezone', 'Status'].map((h) => el('th', {}, h)))),
           el('tbody', {}, ...tutors.map((t, i) => el('tr', { onclick: () => tutorForm(t) },
             el('td', { class: 'sn' }, i + 1),
             el('td', {}, el('b', {}, t.name), t.gender ? el('div', { class: 'muted' }, t.gender) : null),
-            el('td', {}, t.phone),
+            el('td', { class: 'tel' }, t.phone),
             el('td', {}, t.subjects || '—'),
             el('td', {}, t.languages || '—'),
             el('td', {}, t.timezone || '—'),
             el('td', {}, chip(t.status)))))))
       : el('div', { class: 'card empty' }, 'No tutors yet. Register one with just a name and phone number.'),
+  );
+}
+
+/* The profiles visitors see on the about page. Separate from the registry
+   above, which holds phone numbers and rates that must not be published. */
+async function teamEditor(view, tabs) {
+  const T = await api('/team');
+  const { tutors } = await api('/tutors').catch(() => ({ tutors: [] }));
+
+  const labelled = (text, node, hint) => el('label', { class: 'f' }, el('span', {}, text), node,
+    hint ? el('small', { class: 'hint' }, hint) : null);
+  const bind = (obj, key, attrs = {}, after) => {
+    const node = attrs.rows ? el('textarea', { rows: attrs.rows }) : el('input', { value: obj[key] ?? '', ...attrs });
+    if (attrs.rows) node.value = obj[key] ?? '';
+    on(node, 'input', () => { obj[key] = node.value; if (after) after(); });
+    return node;
+  };
+
+  const listBox = el('div', { class: 'plan-list' });
+  const draw = () => {
+    listBox.replaceChildren(...T.members.map((m, i) => {
+      const ava = el('div', { class: 'ava' }, m.initial || (m.name || '?').trim()[0] || '?');
+      return el('div', { class: 'plan-edit' },
+        el('div', { class: 'plan-edit__head' },
+          el('b', {}, `${i + 1}. ${m.name || 'New teacher'}`),
+          el('div', { class: 'row' },
+            el('button', { class: 'btn btn--ghost btn--sm', disabled: i === 0 || null,
+              onclick: () => { T.members.splice(i - 1, 0, T.members.splice(i, 1)[0]); draw(); } }, 'Move up'),
+            el('button', { class: 'btn btn--ghost btn--sm', disabled: i === T.members.length - 1 || null,
+              onclick: () => { T.members.splice(i + 1, 0, T.members.splice(i, 1)[0]); draw(); } }, 'Move down'),
+            el('button', { class: 'btn btn--danger btn--sm', onclick: () => {
+              if (T.members.length < 2) return toast('Keep at least one teacher');
+              if (!confirm(`Remove ${m.name} from the website?`)) return;
+              T.members.splice(i, 1); draw();
+            } }, 'Remove'))),
+        el('div', { class: 'teamrow' },
+          ava,
+          el('div', { class: 'fields', style: 'flex:1' },
+            labelled('Name shown', bind(m, 'name', { maxlength: 60 }, () => { ava.textContent = m.initial || (m.name || '?').trim()[0] || '?'; })),
+            labelled('Specialism', bind(m, 'role', { maxlength: 60, placeholder: 'Tajweed & Ijazah' })),
+            labelled('Avatar letter', bind(m, 'initial', { maxlength: 2, dir: 'rtl' }, () => { ava.textContent = m.initial || (m.name || '?').trim()[0] || '?'; }), 'Blank uses the first letter'))),
+        labelled('Short profile', bind(m, 'bio', { rows: 2 })));
+    }));
+  };
+
+  const msg = el('p', { class: 'err' });
+  const publish = el('button', { class: 'btn btn--gold' }, 'Publish to the website');
+  on(publish, 'click', async () => {
+    msg.textContent = ''; publish.disabled = true; publish.textContent = 'Publishing…';
+    try {
+      const saved = await api('/team', { method: 'PUT', body: T });
+      toast(saved.published ? 'Published — the website is updated' : 'Saved, but the website did not rebuild');
+      if (!saved.published) msg.textContent = `The site could not be rebuilt: ${saved.log || 'unknown error'}`;
+      else viewTutors(view);
+    } catch (err) { msg.textContent = err.message; }
+    finally { publish.disabled = false; publish.textContent = 'Publish to the website'; }
+  });
+
+  const reset = el('button', { class: 'btn btn--ghost' }, 'Restore original profiles');
+  on(reset, 'click', async () => {
+    if (!confirm('Put the teacher profiles back to the ones the site launched with?')) return;
+    try { const r = await api('/team/reset', { method: 'POST' }); toast(r.published ? 'Restored and published' : 'Restored'); viewTutors(view); }
+    catch (err) { msg.textContent = err.message; }
+  });
+
+  const addMember = (from) => {
+    T.members.push({ name: from?.name || '', role: from?.subjects || '', initial: '', bio: '' });
+    draw();
+    listBox.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+  const fromRegistry = el('select', { style: 'max-width:240px' },
+    el('option', { value: '' }, 'Add from your tutors…'),
+    ...tutors.map((t) => el('option', { value: t.id }, t.name)));
+  on(fromRegistry, 'change', () => {
+    const t = tutors.find((x) => x.id === fromRegistry.value);
+    fromRegistry.value = '';
+    if (!t) return;
+    addMember(t);
+    toast('Added — only the name and subjects come across');
+  });
+
+  draw();
+
+  view.replaceChildren(
+    head('Teachers on the website',
+      T.custom ? `Your own profiles · last published ${dt(T.updated_at)}` : 'Showing the profiles the site launched with',
+      reset, publish),
+    tabs,
+    msg,
+    el('div', { class: 'card' },
+      el('div', { class: 'sec-label' }, 'Section heading'),
+      el('div', { class: 'fields' },
+        labelled('Small label above', bind(T, 'eyebrow', { maxlength: 40 })),
+        labelled('Heading', bind(T, 'heading', { maxlength: 100 })),
+        labelled('Button under the cards', bind(T, 'cta', { maxlength: 40 }), 'Leave empty to hide it')),
+      labelled('Introduction', bind(T, 'lead', { rows: 2 })),
+      el('p', { class: 'muted', style: 'margin-top:.7rem' },
+        'These profiles appear under “Our teachers” on the about page. Phone numbers, rates and notes from your tutor list are never published.')),
+    listBox,
+    el('div', { class: 'row', style: 'margin-top:.9rem' },
+      el('button', { class: 'btn btn--ghost', onclick: () => addMember(null) }, 'Add a teacher'),
+      fromRegistry),
   );
 }
 
