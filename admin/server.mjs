@@ -10,7 +10,7 @@ import { isAuthed, issueCookie, clearCookie, checkPassword, setPassword, hasPass
   recoveryKey, rotateRecoveryKey, checkRecoveryKey } from './lib/auth.mjs';
 import { formatLead, formatLeadOneLine, formatInvoice, formatTutor, waLink, money, prettyDate } from './lib/format.mjs';
 import { invoiceHTML } from './lib/invoice-html.mjs';
-import { sendMail, mailReady, mailConfig } from './lib/mail.mjs';
+import { sendMail, mailReady, mailConfig, mailMissing } from './lib/mail.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const UI = join(here, 'ui');
@@ -476,7 +476,7 @@ route('GET', /^\/api\/summary$/, async (_req, res) => {
 /* --- settings --- */
 route('GET', /^\/api\/settings$/, async (_req, res) => {
   const c = mailConfig();
-  return ok(res, { ...orgSettings(), mail: { ready: mailReady(), host: c.host, to: c.to, from: c.from } });
+  return ok(res, { ...orgSettings(), mail: { ready: mailReady(), host: c.host, to: c.to, from: c.from, missing: mailMissing() } });
 });
 
 /* Send a test message so the credentials can be checked from the admin. */

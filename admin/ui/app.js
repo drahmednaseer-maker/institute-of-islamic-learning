@@ -613,7 +613,7 @@ async function viewSettings(view) {
   const mail = s.mail || {};
   const mailStatus = el('p', { class: mail.ready ? 'muted' : 'note' }, mail.ready
     ? `Enquiry emails are sent from ${mail.from} to ${mail.to} via ${mail.host}.`
-    : 'Email notifications are off — SMTP_HOST, SMTP_USER, SMTP_PASS, MAIL_FROM and MAIL_TO need setting on the server. Enquiries still arrive in this panel either way.');
+    : `Email notifications are off — still to set on the server: ${(mail.missing || []).join(', ')}. Enquiries arrive in this panel either way.`);
 
   view.replaceChildren(
     head('Settings'),

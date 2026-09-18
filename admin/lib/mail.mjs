@@ -14,10 +14,14 @@ export const mailConfig = () => ({
   secure: String(process.env.SMTP_SECURE || '') === '1' || Number(process.env.SMTP_PORT) === 465,
 });
 
-export const mailReady = () => {
+/* Names exactly which variables are still missing, so the admin can say so. */
+export const mailMissing = () => {
   const c = mailConfig();
-  return Boolean(c.host && c.user && c.pass && c.from && c.to);
+  return Object.entries({ SMTP_HOST: c.host, SMTP_USER: c.user, SMTP_PASS: c.pass, MAIL_FROM: c.from, MAIL_TO: c.to })
+    .filter(([, v]) => !v).map(([k]) => k);
 };
+
+export const mailReady = () => mailMissing().length === 0;
 
 /* Wraps a socket in a line-oriented request/response conversation. */
 function conversation(socket) {
@@ -52,6 +56,7 @@ const encodeHeader = (s) => (/^[\x20-\x7E]*$/.test(s) ? s : `=?UTF-8?B?${b64(s)}
 
 export async function sendMail({ subject, text, replyTo }) {
   const c = mailConfig();
+  const greetingName = (c.from.split('@')[1] || c.host || 'localhost');
   if (!mailReady()) return { ok: false, skipped: true, reason: 'SMTP is not configured' };
 
   const connect = () => new Promise((resolve, reject) => {
@@ -66,14 +71,14 @@ export async function sendMail({ subject, text, replyTo }) {
   let chat = conversation(socket);
   try {
     await chat.send(null, [220]);
-    await chat.send(`EHLO ${c.host}`);
+    await chat.send(`EHLO ${greetingName}`);
 
     if (!c.secure) {
       await chat.send('STARTTLS', [220]);
       socket = tls.connect({ socket, servername: c.host });
       await new Promise((res, rej) => { socket.once('secureConnect', res); socket.once('error', rej); });
       chat = conversation(socket);
-      await chat.send(`EHLO ${c.host}`);
+      await chat.send(`EHLO ${greetingName}`);
     }
 
     await chat.send('AUTH LOGIN', [334]);

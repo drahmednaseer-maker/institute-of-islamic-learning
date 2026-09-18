@@ -134,16 +134,21 @@ unset and the admin panel still receives everything.
 
 | Variable | Example |
 | --- | --- |
-| `SMTP_HOST` | `mail.iilonline.com` |
+| `SMTP_HOST` | `smtp.gmail.com` (Google Workspace) |
 | `SMTP_PORT` | `587` (STARTTLS) or `465` (implicit TLS) |
 | `SMTP_USER` | `info@iilonline.com` |
-| `SMTP_PASS` | the mailbox password |
+| `SMTP_PASS` | a Google **App Password**, not the account password |
 | `MAIL_FROM` | `info@iilonline.com` |
 | `MAIL_TO` | `info@iilonline.com` — comma-separate several |
 
 Settings shows whether it is configured and has a **Send a test email** button.
 The sender is a small SMTP client in `admin/lib/mail.mjs`; sending never blocks
 or fails a submission.
+
+Google Workspace refuses a plain account password over SMTP. Turn on 2-Step
+Verification for the mailbox, then create an App Password under
+myaccount.google.com → Security → App passwords, and use those 16 characters as
+`SMTP_PASS`.
 
 ### How enquiries arrive
 
