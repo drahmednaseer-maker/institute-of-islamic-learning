@@ -1,6 +1,6 @@
 <!--@
-title: Fee & Pricing | Online Quran Classes from $32/month — Institute of Islamic Learning
-description: Transparent monthly fees for one-to-one online Quran classes in USD, GBP, EUR, CAD and AUD. Choose 30, 45 or 60-minute lessons, 2 to 5 classes per week. Includes a live fee calculator and {{trialWord}} free trial classes.
+title: Fee & Pricing | Online Quran Classes from ${{priceLow}}/month — Institute of Islamic Learning
+description: Transparent monthly fees for one-to-one online Quran classes in USD, GBP, EUR, CAD and AUD. Choose {{durationList}}, {{perWeekRange}} classes per week. Includes a live fee calculator and {{trialWord}} free trial classes.
 nav: pricing
 schema: pricing.html
 -->
@@ -17,7 +17,7 @@ schema: pricing.html
   <div class="wrap">
     <header class="section-head reveal">
       <p class="eyebrow"><span aria-hidden="true">✦</span> Monthly plans</p>
-      <h2 class="h2">Pick your region and class length</h2>
+      <h2 class="h2">{{planHeading}}</h2>
       <p class="lead">Every plan is one-to-one, live with a certified tutor, and includes a monthly progress report from three classes a week upwards.</p>
     </header>
     <!--PRICING-->
@@ -43,14 +43,7 @@ schema: pricing.html
             <span class="field__label">Course</span>
             <select name="course"><!--COURSE_OPTIONS--></select>
           </label>
-          <label class="field field--half">
-            <span class="field__label">Class length</span>
-            <select name="duration">
-              <option value="30">30 minutes</option>
-              <option value="45">45 minutes</option>
-              <option value="60">60 minutes</option>
-            </select>
-          </label>
+          <!--CALC_DURATION-->
           <label class="field field--half">
             <span class="field__label">Classes per week</span>
             <select name="perweek"><!--CALC_PERWEEK--></select>

@@ -29,11 +29,10 @@ const DEFAULT_REGIONS = {
   bh: { label: 'Bahrain', short: 'Bahrain', symbol: 'BHD ', code: 'BHD', rates: { 30: 6, 45: 7.5, 60: 11.3 } },
 };
 
-const DEFAULT_DURATIONS = [30, 45, 60];
+const DEFAULT_DURATIONS = [30];
 
 /* discount is the multi-class reduction applied to that plan, as a percentage. */
 const DEFAULT_PLANS = [
-  { per: 2, name: 'Starter', badge: '', blurb: 'Steady weekend progress', discount: 0, features: [] },
   { per: 3, name: 'Regular', badge: '', blurb: 'A comfortable weekly rhythm', discount: 0, features: [] },
   { per: 4, name: 'Standard', badge: 'Most popular', blurb: 'Our recommended pace', discount: 3, features: [] },
   { per: 5, name: 'Intensive', badge: 'Best value', blurb: 'Fastest route to fluency', discount: 6, features: [] },

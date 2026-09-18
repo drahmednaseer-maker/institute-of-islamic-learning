@@ -11,6 +11,19 @@ import { COURSES, iconPath } from './src/data/courses.mjs';
 import { TEAM } from './src/data/team.mjs';
 
 const NUMBER_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+/* the headline price and the range of class frequencies are quoted in the page
+   title, the meta description and the structured data; deriving them means a
+   plan added or dropped in the backend cannot leave a stale number behind */
+const US_PRICES = PLANS.map((p) => monthly('us', DURATIONS[0], p.per)).filter(Boolean);
+const PRICE_LOW = String(Math.min(...US_PRICES, Infinity));
+const PRICE_HIGH = String(Math.max(...PLANS.map((p) => monthly('us', DURATIONS[DURATIONS.length - 1], p.per)), 0));
+const DUR_LIST = DURATIONS.length > 1
+  ? `${DURATIONS.slice(0, -1).join(', ')} or ${DURATIONS[DURATIONS.length - 1]}-minute lessons`
+  : `${DURATIONS[0]}-minute lessons`;
+const PLAN_PERS = PLANS.map((p) => p.per).sort((a, z) => a - z);
+const PER_WEEK_RANGE = PLAN_PERS.length > 1 ? `${PLAN_PERS[0]} to ${PLAN_PERS[PLAN_PERS.length - 1]}` : String(PLAN_PERS[0] ?? 0);
+const OFFER_COUNT = String(PLANS.length * DURATIONS.length * Object.keys(REGIONS).length);
+
 /* so that "all eight courses" can never become a lie after an edit */
 const COURSE_COUNT = NUMBER_WORDS[COURSES.length] || String(COURSES.length);
 const COURSE_LIST = COURSES.map((c) => c.name).reduce((acc, n, i, all) =>
@@ -155,9 +168,9 @@ function renderPricing() {
     .map(([k, r], i) => `<button type="button" class="tab" role="tab" data-value="${k}" aria-selected="${i === 0}">` +
       `<span class="tab__long">${r.label}</span><span class="tab__short">${r.short}</span></button>`)
     .join('');
-  const durTabs = DURATIONS.map(
-    (d, i) => `<button type="button" class="tab" role="tab" data-value="${d}" aria-selected="${i === 0}">${d} minutes</button>`
-  ).join('');
+  const durTabs = DURATIONS.length > 1 ? `<div class="tabs tabs--sub" role="tablist" aria-label="Class length" data-tabgroup="duration">${
+    DURATIONS.map((d, i) => `<button type="button" class="tab" role="tab" data-value="${d}" aria-selected="${i === 0}">${d} minutes</button>`).join('')
+  }</div>` : '';
 
   const panels = Object.keys(REGIONS)
     .flatMap((region) =>
@@ -199,7 +212,7 @@ function renderPricing() {
 
   return `<div data-pricing>
     <div class="tabs" role="tablist" aria-label="Region" data-tabgroup="region">${regionTabs}</div>
-    <div class="tabs tabs--sub" role="tablist" aria-label="Class length" data-tabgroup="duration">${durTabs}</div>
+    ${durTabs}
     ${panels}
   </div>
   <script type="application/json" id="rateData">${rateJson}</script>`;
@@ -226,6 +239,12 @@ for (const file of pageFiles) {
     courseCount: COURSE_COUNT,
     CourseCount: COURSE_COUNT[0].toUpperCase() + COURSE_COUNT.slice(1),
     courseList: COURSE_LIST,
+    priceLow: PRICE_LOW,
+    priceHigh: PRICE_HIGH,
+    perWeekRange: PER_WEEK_RANGE,
+    durationList: DUR_LIST,
+    planHeading: DURATIONS.length > 1 ? 'Pick your region and class length' : 'Pick your region',
+    offerCount: OFFER_COUNT,
   };
   const vars = {
     ...trial,
@@ -262,9 +281,18 @@ for (const file of pageFiles) {
   html = html.replaceAll('<!--COURSE_OPTIONS-->', renderCourseOptions);
   html = html.replace('<!--COURSE_SCHEMA-->', renderCourseSchema);
   html = html.replace('<!--TEACHERS-->', renderTeachers);
+  html = html.replace('<!--PLAN_DAYS-->', () => {
+    const pick = PLANS.find((p) => p.badge) || PLANS[Math.floor(PLANS.length / 2)];
+    return PLANS.map((p) => `<option${p === pick ? ' selected' : ''}>${p.per} classes per week</option>`).join('');
+  });
+  html = html.replace('<!--CALC_DURATION-->', () => (DURATIONS.length > 1
+    ? `<label class="field field--half"><span class="field__label">Class length</span><select name="duration">${
+      DURATIONS.map((d, i) => `<option value="${d}"${i ? '' : ' selected'}>${d} minutes</option>`).join('')
+    }</select></label>`
+    : `<input type="hidden" name="duration" value="${DURATIONS[0]}">`));
   html = html.replace('<!--CALC_PERWEEK-->', () => {
-    const mid = PLANS[Math.min(2, PLANS.length - 1)];
-    return PLANS.map((p) => `<option value="${p.per}"${p === mid ? ' selected' : ''}>${p.per} ${p.per === 1 ? 'class' : 'classes'}</option>`).join('');
+    const pick = PLANS.find((p) => p.badge) || PLANS[Math.floor(PLANS.length / 2)];
+    return PLANS.map((p) => `<option value="${p.per}"${p === pick ? ' selected' : ''}>${p.per} ${p.per === 1 ? 'class' : 'classes'}</option>`).join('');
   });
   /* mark the active nav item */
   html = html.replaceAll(`data-nav="${vars.nav}"`, `data-nav="${vars.nav}" aria-current="page"`);

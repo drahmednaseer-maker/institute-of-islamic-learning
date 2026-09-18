@@ -217,8 +217,11 @@
       $$(`[data-tabgroup="${group}"] .tab`, priceRoot).forEach((t) => t.setAttribute('aria-selected', String(t.dataset.value === value)));
     };
     const render = () => {
-      const region = $('[data-tabgroup="region"] [aria-selected="true"]', priceRoot)?.dataset.value || 'us';
-      const dur = $('[data-tabgroup="duration"] [aria-selected="true"]', priceRoot)?.dataset.value || '30';
+      /* fall back to whatever the first panel is, not to a hard-coded region or
+         class length — either can be edited away in the backend */
+      const first = $('[data-panel]', priceRoot);
+      const region = $('[data-tabgroup="region"] [aria-selected="true"]', priceRoot)?.dataset.value || first?.dataset.region;
+      const dur = $('[data-tabgroup="duration"] [aria-selected="true"]', priceRoot)?.dataset.value || first?.dataset.duration;
       $$('[data-panel]', priceRoot).forEach((p) => { p.hidden = p.dataset.region !== region || p.dataset.duration !== dur; });
     };
     $$('.tab', priceRoot).forEach((tab) => on(tab, 'click', () => { setActive(tab.closest('[data-tabgroup]').dataset.tabgroup, tab.dataset.value); render(); }));
