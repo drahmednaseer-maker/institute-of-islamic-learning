@@ -610,8 +610,29 @@ async function viewSettings(view) {
   const terms = el('textarea', {}, s.invoice_terms || '');
   const rates = el('textarea', {}, s.fx_rates || '{}');
 
+  const mail = s.mail || {};
+  const mailStatus = el('p', { class: mail.ready ? 'muted' : 'note' }, mail.ready
+    ? `Enquiry emails are sent from ${mail.from} to ${mail.to} via ${mail.host}.`
+    : 'Email notifications are off — SMTP_HOST, SMTP_USER, SMTP_PASS, MAIL_FROM and MAIL_TO need setting on the server. Enquiries still arrive in this panel either way.');
+
   view.replaceChildren(
     head('Settings'),
+    el('div', { class: 'card card--pad', style: 'margin-bottom:1rem' },
+      el('h3', { style: 'font-size:1rem;margin-bottom:.5rem' }, 'Notifications'),
+      mailStatus,
+      el('div', { class: 'row', style: 'margin-top:.7rem' },
+        mail.ready ? el('button', { class: 'btn btn--ghost btn--sm', onclick: async (e) => {
+          e.target.textContent = 'Sending…';
+          try { await api('/settings/test-email', { method: 'POST' }); toast('Test email sent'); }
+          catch (ex) { toast(ex.message); }
+          e.target.textContent = 'Send a test email';
+        } }, 'Send a test email') : null,
+        (window.Notification && Notification.permission !== 'granted')
+          ? el('button', { class: 'btn btn--ghost btn--sm', onclick: async () => {
+              const p = await Notification.requestPermission();
+              toast(p === 'granted' ? 'Desktop alerts on' : 'Desktop alerts not allowed');
+            } }, 'Enable desktop alerts')
+          : el('span', { class: 'muted' }, 'Desktop alerts are on'))),
     el('div', { class: 'card card--pad' },
       el('div', { class: 'fields' }, ...f.nodes),
       el('label', { class: 'f', style: 'margin-top:.8rem' }, el('span', {}, 'Expense heads (comma separated)'), heads),
@@ -626,6 +647,45 @@ async function viewSettings(view) {
           toast('Settings saved');
         } }, 'Save settings'))),
   );
+}
+
+
+/* ---------------- new enquiry watcher ----------------
+   Polls quietly while the admin is open so a new booking announces itself
+   instead of waiting to be noticed on the next page load. */
+let lastSeenLeads = null;
+let watchTimer = null;
+
+function notify(count) {
+  const word = count === 1 ? 'enquiry' : 'enquiries';
+  toast(`${count} new ${word} just came in`);
+  const bar = el('button', {
+    class: 'newbar',
+    onclick: (e) => { e.currentTarget.remove(); location.hash = 'leads'; },
+  }, `${count} new ${word} — open`);
+  document.querySelectorAll('.newbar').forEach((n) => n.remove());
+  document.body.append(bar);
+  if (window.Notification && Notification.permission === 'granted') {
+    try { new Notification('Institute of Islamic Learning', { body: `${count} new ${word}`, tag: 'iil-lead' }); } catch {}
+  }
+}
+
+async function pollEnquiries() {
+  try {
+    const s = await api('/summary');
+    summary = s;
+    renderNav((location.hash.slice(1) || 'dashboard'));
+    if (lastSeenLeads !== null && s.newLeads > lastSeenLeads) notify(s.newLeads - lastSeenLeads);
+    lastSeenLeads = s.newLeads;
+  } catch { /* signed out or offline; the next tick retries */ }
+}
+
+function startWatching() {
+  clearInterval(watchTimer);
+  lastSeenLeads = null;
+  pollEnquiries();
+  watchTimer = setInterval(() => { if (!document.hidden) pollEnquiries(); }, 30000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) pollEnquiries(); });
 }
 
 /* ---------------- router ---------------- */
@@ -647,7 +707,7 @@ async function route() {
 }
 
 function showLogin() { $('#login').classList.remove('hide'); $('#app').classList.add('hide'); }
-function showApp() { $('#login').classList.add('hide'); $('#app').classList.remove('hide'); route(); }
+function showApp() { $('#login').classList.add('hide'); $('#app').classList.remove('hide'); route(); startWatching(); }
 
 /* show/hide for any password field marked with a reveal button */
 document.addEventListener('click', (e) => {
@@ -688,7 +748,7 @@ $('#loginForm').addEventListener('submit', async (e) => {
   } catch (ex) { err.textContent = ex.message; }
 });
 document.addEventListener('click', async (e) => {
-  if (e.target.closest('[data-logout]')) { await api('/logout', { method: 'POST' }); location.hash = ''; showLogin(); }
+  if (e.target.closest('[data-logout]')) { clearInterval(watchTimer); await api('/logout', { method: 'POST' }); location.hash = ''; showLogin(); }
 });
 window.addEventListener('hashchange', route);
 

@@ -75,17 +75,18 @@
 <p class="field-note">We reply within a few hours, in shā’ Allāh. No card details required for the trial.</p>
 <div class="form-actions">
   <button type="submit" class="btn btn--gold btn--lg">
-    <span class="btn__label">Book my free trial</span>
-    <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M4 12h14.2l-4.6-4.6L15 6l7 6-7 6-1.4-1.4 4.6-4.6H4z"/></svg>
+    <span class="btn__label">Book my free trial</span><svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M4 12h14.2l-4.6-4.6L15 6l7 6-7 6-1.4-1.4 4.6-4.6H4z"/></svg>
   </button>
   <p class="form-status" role="status" aria-live="polite"></p>
 </div>
 <div class="form-done">
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m-1 15-4-4 1.4-1.4L11 14.2l5.6-5.6L18 10z"/></svg>
-  <h3 class="h3">Jazak Allahu khayran — your request is ready to send</h3>
-  <p>A WhatsApp window should have opened with your details filled in. If it didn’t, use a button below and we’ll take it from there.</p>
-  <div class="cta-band__btns" style="margin-top:1.25rem">
-    <a class="btn btn--gold" data-wa href="https://wa.me/{{whatsapp}}" target="_blank" rel="noopener">Send on WhatsApp</a>
-    {{#email}}<a class="btn btn--ghost" data-mail href="mailto:{{email}}">Send by email</a>{{/email}}{{^email}}<a class="btn btn--ghost" href="tel:{{phoneHref}}">Call us instead</a>{{/email}}
+  <h3 class="h3" data-done-title>Jazak Allahu khayran — your request has been received</h3>
+  <p data-done-note>Our team will contact you shortly, in shā’ Allāh — usually within a few hours. There is nothing else you need to do.</p>
+  <p class="form-ref" data-done-ref hidden></p>
+  <p class="form-done__or">Prefer to speak to us now?</p>
+  <div class="cta-band__btns" style="margin-top:.65rem">
+    <a class="btn btn--wa" data-wa href="https://wa.me/{{whatsapp}}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2m0 18a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20m4.4-5.8c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.1-.2 0-.4.1-.5l.4-.5.2-.4v-.4l-.7-1.7c-.2-.4-.4-.4-.5-.4h-.5a1 1 0 0 0-.7.3A3 3 0 0 0 7.3 10a5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4 7.6 7.6 0 0 0 1.5.5 3.6 3.6 0 0 0 1.7.1 2.8 2.8 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3z"/></svg><span>Chat on WhatsApp</span></a>
+    <a class="btn btn--ghost" href="tel:{{phoneHref}}"><svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.58 3.6a1 1 0 0 1-.25 1z"/></svg><span>Call {{phone}}</span></a>
   </div>
 </div>

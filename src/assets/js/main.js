@@ -131,7 +131,7 @@
 
   $$('[data-booking]').forEach((form) => {
     $$('input,select,textarea', form).forEach((i) => on(i, 'input', () => clearInvalid(i)));
-    on(form, 'submit', (e) => {
+    on(form, 'submit', async (e) => {
       e.preventDefault();
       const status = $('.form-status', form);
       let firstBad = null;
@@ -152,37 +152,61 @@
       if (status) { status.textContent = ''; status.classList.remove('is-error'); }
 
       const data = Object.fromEntries(new FormData(form).entries());
-
-      /* Record the enquiry in the admin backend. The WhatsApp handoff below
-         runs either way, so a backend outage never costs an enquiry. */
-      if (CFG.leadsEndpoint) {
-        try {
-          fetch(CFG.leadsEndpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...data, source: 'website' }),
-            keepalive: true,
-          }).catch(() => {});
-        } catch (err) {}
-      }
-
       const msg = buildMessage(data);
       const wa = `https://wa.me/${CFG.whatsapp}?text=${encodeURIComponent(msg)}`;
-      const mail = CFG.email
-        ? `mailto:${CFG.email}?subject=${encodeURIComponent('Free trial request — ' + data.name)}&body=${encodeURIComponent(msg)}`
-        : '';
 
       const done = $('.form-done', form);
-      if (done) {
-        const link = $('[data-wa]', done);
-        const mlink = $('[data-mail]', done);
-        if (link) link.href = wa;
-        if (mlink && mail) mlink.href = mail;
+      const title = done && $('[data-done-title]', done);
+      const note = done && $('[data-done-note]', done);
+      const refLine = done && $('[data-done-ref]', done);
+      const waLink = done && $('[data-wa]', done);
+      if (waLink) waLink.href = wa;
+
+      const finish = () => {
+        form.classList.remove('form-sending');
+        form.classList.add('is-sent');
+        if (title) { title.setAttribute('tabindex', '-1'); title.focus(); }
+      };
+
+      /* No endpoint configured: hand straight off to WhatsApp as before. */
+      if (!CFG.leadsEndpoint) {
+        if (note) note.textContent = 'A WhatsApp window should have opened with your details filled in. If it did not, use the button below.';
+        try { window.open(wa, '_blank', 'noopener'); } catch (err) {}
+        return finish();
       }
-      form.classList.add('is-sent');
+
+      const submitBtn = $('button[type=submit]', form);
+      const label = submitBtn && $('.btn__label', submitBtn);
+      const original = label && label.textContent;
+      if (label) label.textContent = 'Sending…';
+      form.classList.add('form-sending');
+
+      let recorded = null;
+      try {
+        const res = await fetch(CFG.leadsEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...data, source: 'website' }),
+        });
+        if (res.ok) recorded = await res.json().catch(() => ({}));
+      } catch (err) { /* offline or the backend is down */ }
+
+      if (label && original) label.textContent = original;
+
+      if (recorded) {
+        if (refLine && recorded.ref) {
+          refLine.innerHTML = `Your reference is <b>${String(recorded.ref).replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase()}</b>`;
+          refLine.hidden = false;
+        }
+        return finish();
+      }
+
+      /* The enquiry did not reach us — say so plainly and fall back to WhatsApp
+         rather than letting the visitor believe it was received. */
+      if (title) title.textContent = 'We could not submit the form just now';
+      if (note) note.textContent = 'Please send us the details on WhatsApp instead — the message below is already filled in for you, so nothing is lost.';
       try { window.open(wa, '_blank', 'noopener'); } catch (err) {}
-      const heading = done && $('h3', done);
-      if (heading) { heading.setAttribute('tabindex', '-1'); heading.focus(); }
+      finish();
     });
   });
 

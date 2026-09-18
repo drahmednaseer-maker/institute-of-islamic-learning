@@ -152,3 +152,11 @@ label.f>span{display:block;font-size:.76rem;font-weight:650;color:var(--dim);mar
 .keybox{font-family:var(--mono);font-size:1.05rem;letter-spacing:.08em;text-align:center;padding:.8rem;margin:.6rem 0 .9rem;
   background:var(--green-50);border:1.5px dashed var(--gold-500);border-radius:10px;word-break:break-all}
 .note{background:#FFF6E5;border:1px solid #F0DCB0;color:#7A5A16;padding:.6rem .8rem;border-radius:9px;font-size:.83rem}
+
+/* new-enquiry banner */
+.newbar{position:fixed;right:1rem;bottom:1rem;z-index:95;display:inline-flex;align-items:center;gap:.5rem;
+  padding:.7rem 1.1rem;border-radius:99px;background:var(--gold-500);color:#231704;font-weight:700;font-size:.9rem;
+  box-shadow:0 10px 26px rgba(178,127,44,.4);animation:pop .25s ease}
+.newbar:hover{filter:brightness(1.05)}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (max-width:860px){.newbar{bottom:5rem}}

@@ -10,6 +10,7 @@ import { isAuthed, issueCookie, clearCookie, checkPassword, setPassword, hasPass
   recoveryKey, rotateRecoveryKey, checkRecoveryKey } from './lib/auth.mjs';
 import { formatLead, formatLeadOneLine, formatInvoice, formatTutor, waLink, money, prettyDate } from './lib/format.mjs';
 import { invoiceHTML } from './lib/invoice-html.mjs';
+import { sendMail, mailReady, mailConfig } from './lib/mail.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const UI = join(here, 'ui');
@@ -151,6 +152,20 @@ route('POST', /^\/api\/public\/leads$/, async (req, res) => {
   if (!str(body.name) && !str(body.phone) && !str(body.email)) return bad(res, 'Name and a contact are required');
   if (str(body.company)) return ok(res, { ok: true });            /* honeypot */
   const id = insertLead(body, str(body.source, 40) || 'website');
+
+  /* Notify by email, but never let it delay or fail the submission. */
+  if (mailReady()) {
+    const lead = db.prepare('SELECT * FROM leads WHERE id = ?').get(id);
+    const org = orgSettings();
+    const text = formatLead(lead, { orgName: org.org_name }).plain;
+    sendMail({
+      subject: `New trial enquiry — ${lead.name}`,
+      text: `${text}\n\nOpen it in the admin: ${(process.env.SITE_URL || '').replace(/\/$/, '')}/admin#leads`,
+      replyTo: lead.email || undefined,
+    }).then((r) => { if (!r.ok && !r.skipped) console.error('lead email failed:', r.error); })
+      .catch((e) => console.error('lead email threw:', e.message));
+  }
+
   return ok(res, { ok: true, ref: id });
 }, { open: true, cors: true });
 
@@ -459,7 +474,18 @@ route('GET', /^\/api\/summary$/, async (_req, res) => {
 });
 
 /* --- settings --- */
-route('GET', /^\/api\/settings$/, async (_req, res) => ok(res, orgSettings()));
+route('GET', /^\/api\/settings$/, async (_req, res) => {
+  const c = mailConfig();
+  return ok(res, { ...orgSettings(), mail: { ready: mailReady(), host: c.host, to: c.to, from: c.from } });
+});
+
+/* Send a test message so the credentials can be checked from the admin. */
+route('POST', /^\/api\/settings\/test-email$/, async (_req, res) => {
+  if (!mailReady()) return bad(res, 'SMTP is not configured on the server yet', 400);
+  const r = await sendMail({ subject: 'Test — Institute of Islamic Learning admin',
+    text: 'This is a test message from the admin panel. If you are reading it, enquiry notifications will arrive here.' });
+  return r.ok ? ok(res, { ok: true }) : bad(res, r.error || 'Could not send', 502);
+});
 
 route('PATCH', /^\/api\/settings$/, async (req, res) => {
   const b = await readBody(req);

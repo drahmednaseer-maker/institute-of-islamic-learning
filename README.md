@@ -127,6 +127,24 @@ npm run admin      # http://localhost:4400
 | `SITE_ORIGIN` | Comma-separated origins allowed to post enquiries |
 | `PORT` | Defaults to 4400 |
 
+### Email notifications
+
+Set these on the server and every enquiry is emailed as it arrives; leave them
+unset and the admin panel still receives everything.
+
+| Variable | Example |
+| --- | --- |
+| `SMTP_HOST` | `mail.iilonline.com` |
+| `SMTP_PORT` | `587` (STARTTLS) or `465` (implicit TLS) |
+| `SMTP_USER` | `info@iilonline.com` |
+| `SMTP_PASS` | the mailbox password |
+| `MAIL_FROM` | `info@iilonline.com` |
+| `MAIL_TO` | `info@iilonline.com` — comma-separate several |
+
+Settings shows whether it is configured and has a **Send a test email** button.
+The sender is a small SMTP client in `admin/lib/mail.mjs`; sending never blocks
+or fails a submission.
+
 ### How enquiries arrive
 
 The booking form posts to `POST /api/public/leads` (unauthenticated, rate-limited,
