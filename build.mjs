@@ -246,6 +246,12 @@ if (existsSync(jsDir)) {
 
 const fingerprinted = fingerprintAssets();
 
+/* robots.txt carries an absolute sitemap URL, so it has to follow SITE_URL too */
+writeFileSync(
+  join(OUT, 'robots.txt'),
+  `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /invoice/\n\nSitemap: ${SITE}/sitemap.xml\n`
+);
+
 const today = new Date().toISOString().slice(0, 10);
 writeFileSync(
   join(OUT, 'sitemap.xml'),
