@@ -126,6 +126,18 @@ route('POST', /^\/api\/recovery\/reset$/, async (req, res) => {
   return ok(res, { ok: true, recovery_key: rotated }, { 'Set-Cookie': issueCookie() });
 }, { open: true });
 
+/* Changing the password requires the current one — an open session alone
+   should not be enough to lock the owner out. */
+route('POST', /^\/api\/password$/, async (req, res) => {
+  const b = await readBody(req);
+  if (!checkPassword(b.current)) return bad(res, 'Your current password is not correct', 401);
+  const next = String(b.password || '');
+  if (next.length < 8) return bad(res, 'The new password must be at least 8 characters', 400);
+  if (next === String(b.current)) return bad(res, 'The new password is the same as the current one', 400);
+  setPassword(next);
+  return ok(res, { ok: true, recovery_key: rotateRecoveryKey() }, { 'Set-Cookie': issueCookie() });
+});
+
 route('GET', /^\/api\/recovery$/, async (_req, res) => ok(res, { key: recoveryKey() }));
 
 route('POST', /^\/api\/logout$/, async (_req, res) => ok(res, { ok: true }, { 'Set-Cookie': clearCookie() }), { open: true });
@@ -453,13 +465,7 @@ route('PATCH', /^\/api\/settings$/, async (req, res) => {
   const b = await readBody(req);
   const allowed = ['org_name', 'org_phone', 'org_email', 'invoice_terms', 'base_currency', 'expense_heads', 'invoice_prefix', 'fx_rates'];
   for (const k of allowed) if (k in b) setSetting(k, str(b[k], 4000) ?? '');
-  let rotated = null;
-  if (str(b.new_password)) {
-    if (String(b.new_password).length < 8) return bad(res, 'Password must be at least 8 characters');
-    setPassword(String(b.new_password));
-    rotated = rotateRecoveryKey();
-  }
-  return ok(res, { ...orgSettings(), recovery_key: rotated });
+  return ok(res, orgSettings());
 });
 
 /* ---------------- http ---------------- */

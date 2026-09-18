@@ -80,6 +80,7 @@ const VIEWS = [
   { id: 'invoices', label: 'Invoices', badge: 'unpaid' },
   { id: 'expenses', label: 'Expenses' },
   { id: 'pnl', label: 'Profit & Loss' },
+  { id: 'security', label: 'Password' },
   { id: 'settings', label: 'Settings' },
 ];
 let summary = {};
@@ -545,6 +546,59 @@ async function viewPnl(view) {
   );
 }
 
+
+/* a password input paired with a reveal button */
+function pwField(label, attrs = {}) {
+  const input = el('input', { type: 'password', autocomplete: 'off', ...attrs });
+  const eye = el('button', {
+    type: 'button', class: 'pw__eye', 'data-reveal': '', 'aria-label': 'Show password',
+    html: '<svg viewBox="0 0 24 24"><path d="M12 5c-5 0-9 4.5-9 7s4 7 9 7 9-4.5 9-7-4-7-9-7m0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9m0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5"/></svg>',
+  });
+  const node = el('label', { class: 'f' }, el('span', {}, label), el('span', { class: 'pw' }, input, eye));
+  return { node, input };
+}
+
+/* ---------------- password & recovery ---------------- */
+async function viewSecurity(view) {
+  const recovery = await api('/recovery');
+  const current = pwField('Current password', { autocomplete: 'current-password' });
+  const next = pwField('New password', { autocomplete: 'new-password', minlength: 8 });
+  const again = pwField('Repeat new password', { autocomplete: 'new-password' });
+  const msg = el('p', { class: 'err' });
+  const keyBox = el('div', { class: 'keybox' }, recovery.key);
+
+  const submit = async () => {
+    msg.textContent = ''; msg.classList.add('err');
+    if (next.input.value !== again.input.value) { msg.textContent = 'The two new passwords do not match.'; return; }
+    if (next.input.value.length < 8) { msg.textContent = 'Use at least 8 characters.'; return; }
+    try {
+      const r = await api('/password', { method: 'POST', body: { current: current.input.value, password: next.input.value } });
+      keyBox.textContent = r.recovery_key;
+      [current, next, again].forEach((f) => { f.input.value = ''; });
+      msg.classList.remove('err');
+      msg.textContent = 'Password changed. Your recovery key below has been replaced — save the new one.';
+      toast('Password changed');
+    } catch (ex) { msg.textContent = ex.message; }
+  };
+
+  view.replaceChildren(
+    head('Password', 'Change your sign-in password and keep your recovery key safe'),
+    el('div', { class: 'card card--pad', style: 'max-width:520px' },
+      el('h3', { style: 'font-size:1rem;margin-bottom:.8rem' }, 'Change password'),
+      current.node,
+      el('div', { style: 'margin-top:.7rem' }, next.node),
+      el('div', { style: 'margin-top:.7rem' }, again.node),
+      msg,
+      el('button', { class: 'btn btn--gold', style: 'margin-top:.8rem', onclick: submit }, 'Change password')),
+
+    el('div', { class: 'card card--pad', style: 'max-width:520px;margin-top:1rem' },
+      el('h3', { style: 'font-size:1rem;margin-bottom:.6rem' }, 'Recovery key'),
+      el('p', { class: 'note' }, 'If the password is ever lost, this key resets it from the sign-in screen. Keep a copy somewhere safe — it is replaced every time the password changes.'),
+      keyBox,
+      el('button', { class: 'btn btn--ghost btn--sm', onclick: () => copy(keyBox.textContent, 'Recovery key copied') }, 'Copy recovery key')),
+  );
+}
+
 /* ---------------- settings ---------------- */
 async function viewSettings(view) {
   const s = await api('/settings');
@@ -555,11 +609,6 @@ async function viewSettings(view) {
   const heads = el('textarea', {}, s.expense_heads || '');
   const terms = el('textarea', {}, s.invoice_terms || '');
   const rates = el('textarea', {}, s.fx_rates || '{}');
-  const pass = el('input', { type: 'password', placeholder: 'Leave blank to keep current', autocomplete: 'new-password' });
-  const eye = el('button', { type: 'button', class: 'pw__eye', 'data-reveal': '', 'aria-label': 'Show password' },
-    el('span', { html: '<svg viewBox="0 0 24 24"><path d="M12 5c-5 0-9 4.5-9 7s4 7 9 7 9-4.5 9-7-4-7-9-7m0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9m0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5"/></svg>' }));
-  const recovery = await api('/recovery');
-  const keyBox = el('div', { class: 'keybox' }, recovery.key);
 
   view.replaceChildren(
     head('Settings'),
@@ -569,28 +618,18 @@ async function viewSettings(view) {
       el('label', { class: 'f', style: 'margin-top:.8rem' }, el('span', {}, 'Invoice terms'), terms),
       el('label', { class: 'f', style: 'margin-top:.8rem' },
         el('span', {}, `Exchange rates into ${s.base_currency} — JSON, e.g. {"PKR":1,"USD":280}`), rates),
-      el('label', { class: 'f', style: 'margin-top:.8rem' }, el('span', {}, 'New admin password'),
-        el('span', { class: 'pw' }, pass, eye)),
-      el('div', { class: 'sec', style: 'margin-top:1.2rem' },
-        el('h3', {}, 'Recovery key'),
-        el('p', { class: 'note' }, 'Save this somewhere safe. If the password is ever lost, this key resets it from the sign-in screen. Changing the password issues a new key.'),
-        keyBox,
-        el('button', { class: 'btn btn--ghost btn--sm', type: 'button', onclick: () => copy(keyBox.textContent, 'Recovery key copied') }, 'Copy recovery key')),
       el('div', { class: 'row', style: 'margin-top:1rem' },
         el('button', { class: 'btn btn--gold', onclick: async () => {
           try { JSON.parse(rates.value || '{}'); } catch { return toast('Exchange rates must be valid JSON'); }
           const body = { ...f.values(), expense_heads: heads.value, invoice_terms: terms.value, fx_rates: rates.value };
-          if (pass.value) body.new_password = pass.value;
-          const saved = await api('/settings', { method: 'PATCH', body });
-          if (saved.recovery_key) { keyBox.textContent = saved.recovery_key; toast('Password changed — save the new recovery key'); }
-          else toast('Settings saved');
-          pass.value = '';
+          await api('/settings', { method: 'PATCH', body });
+          toast('Settings saved');
         } }, 'Save settings'))),
   );
 }
 
 /* ---------------- router ---------------- */
-const RENDER = { dashboard: viewDashboard, leads: viewLeads, tutors: viewTutors, invoices: viewInvoices, expenses: viewExpenses, pnl: viewPnl, settings: viewSettings };
+const RENDER = { dashboard: viewDashboard, leads: viewLeads, tutors: viewTutors, invoices: viewInvoices, expenses: viewExpenses, pnl: viewPnl, security: viewSecurity, settings: viewSettings };
 
 async function route() {
   document.querySelectorAll('.drawer').forEach((d) => d.remove());   /* never leave one open across views */
