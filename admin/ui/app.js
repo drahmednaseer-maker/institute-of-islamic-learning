@@ -80,6 +80,7 @@ const VIEWS = [
   { id: 'invoices', label: 'Invoices', badge: 'unpaid' },
   { id: 'expenses', label: 'Expenses' },
   { id: 'pnl', label: 'Profit & Loss' },
+  { id: 'pricing', label: 'Fees & Plans' },
   { id: 'security', label: 'Password' },
   { id: 'settings', label: 'Settings' },
 ];
@@ -193,35 +194,97 @@ const stat = (v, label) => el('div', { class: 'stat' }, el('b', {}, v), el('span
 
 /* ---------------- leads ---------------- */
 let leadFilter = 'all', leadQuery = '';
+let leadPicked = new Set();
 async function viewLeads(view) {
   const { leads, counts } = await api(`/leads?status=${leadFilter}&q=${encodeURIComponent(leadQuery)}`);
   const { tutors } = await api('/tutors');
   const total = counts.reduce((s, c) => s + c.n, 0);
   const countFor = (s) => (counts.find((c) => c.status === s) || { n: 0 }).n;
 
+  /* a row that has scrolled out of the current filter is no longer selectable */
+  const onScreen = new Set(leads.map((l) => l.id));
+  leadPicked = new Set([...leadPicked].filter((id) => onScreen.has(id)));
+
   const search = el('input', { type: 'search', placeholder: 'Search name, phone, course…', value: leadQuery, style: 'max-width:260px' });
   search.addEventListener('input', debounce(() => { leadQuery = search.value; viewLeads(view); }, 300));
 
-  view.replaceChildren(
+  const stop = (fn) => (e) => { e.stopPropagation(); fn(e); };
+  const pick = (id, want) => { if (want) leadPicked.add(id); else leadPicked.delete(id); viewLeads(view); };
+  const removing = (ids) => deleteLeads(ids, leads.filter((l) => ids.includes(l.id)).map((l) => l.name), () => viewLeads(view));
+
+  const allOn = leads.length > 0 && leadPicked.size === leads.length;
+  const box = (checked, onchange) => el('input', { type: 'checkbox', checked: checked || null, onclick: stop(() => {}), onchange });
+
+  /* replaceChildren is a raw DOM call — a null child would print as "null" */
+  const parts = [
     head('Enquiries', `${total} total · every website booking lands here`,
       search,
       el('button', { class: 'btn btn--gold', onclick: newLeadForm }, 'Add manually')),
     el('div', { class: 'filters' }, ...['all', 'new', 'contacted', 'trial', 'enrolled', 'lost'].map((s) =>
-      el('button', { class: leadFilter === s ? 'on' : '', onclick: () => { leadFilter = s; viewLeads(view); } },
+      el('button', { class: leadFilter === s ? 'on' : '', onclick: () => { leadFilter = s; leadPicked.clear(); viewLeads(view); } },
         `${s[0].toUpperCase()}${s.slice(1)}${s === 'all' ? '' : ` (${countFor(s)})`}`))),
+    leadPicked.size
+      ? el('div', { class: 'pickbar' },
+          el('b', {}, `${leadPicked.size} selected`),
+          el('button', { class: 'btn btn--danger btn--sm', onclick: () => removing([...leadPicked]) }, 'Delete selected'),
+          el('button', { class: 'btn btn--ghost btn--sm', onclick: () => { leadPicked.clear(); viewLeads(view); } }, 'Clear'))
+      : null,
     leads.length
       ? el('div', { class: 'card scroll' }, el('table', { class: 'tbl' },
-          el('thead', {}, el('tr', {}, el('th', { class: 'sn' }, '#'), ...['Student', 'Course', 'Schedule', 'Tutor', 'Status', 'Received'].map((h) => el('th', {}, h)))),
-          el('tbody', {}, ...leads.map((l, i) => el('tr', { onclick: () => leadDrawer(l.id, tutors, view) },
+          el('thead', {}, el('tr', {},
+            el('th', { class: 'pickcol' }, box(allOn, () => { if (allOn) leadPicked.clear(); else leads.forEach((l) => leadPicked.add(l.id)); viewLeads(view); })),
+            el('th', { class: 'sn' }, '#'),
+            ...['Student', 'Contact number', 'Country', 'Course', 'Schedule', 'Tutor', 'Status', 'Received'].map((h) => el('th', {}, h)),
+            el('th', { class: 'acts' }, ''))),
+          el('tbody', {}, ...leads.map((l, i) => el('tr', { class: leadPicked.has(l.id) ? 'picked' : '', onclick: () => leadDrawer(l.id, tutors, view) },
+            el('td', { class: 'pickcol' }, box(leadPicked.has(l.id), (e) => pick(l.id, e.target.checked))),
             el('td', { class: 'sn' }, i + 1),
-            el('td', {}, el('b', {}, l.name), el('div', { class: 'muted' }, [l.phone, l.country].filter(Boolean).join(' · '))),
+            el('td', { class: 'nm' }, el('b', {}, l.name), l.student ? el('div', { class: 'muted' }, l.student) : null),
+            el('td', { class: 'tel' }, l.phone || '—'),
+            el('td', {}, l.country || '—'),
             el('td', {}, l.course || '—'),
             el('td', {}, el('div', {}, l.days || '—'), el('div', { class: 'muted' }, l.preferred_time || '')),
             el('td', {}, l.tutor_name || el('span', { class: 'muted' }, 'Unassigned')),
             el('td', {}, chip(l.status)),
-            el('td', { class: 'muted' }, dt(l.created_at)))))))
+            el('td', { class: 'muted when' }, dt(l.created_at)),
+            el('td', { class: 'acts' },
+              el('button', { class: 'btn btn--ghost btn--sm', onclick: stop(() => leadDrawer(l.id, tutors, view)) }, 'View'),
+              el('button', { class: 'btn btn--danger btn--sm', onclick: stop(() => removing([l.id])) }, 'Delete')))))))
       : el('div', { class: 'card empty' }, 'No enquiries yet. Website bookings appear here automatically once the site is pointed at this backend.'),
-  );
+  ];
+  view.replaceChildren(...parts.filter(Boolean));
+}
+
+/* Deleting cannot be undone, so it asks for the master password every time. */
+function deleteLeads(ids, names, after) {
+  const many = ids.length > 1;
+  drawer(many ? `Delete ${ids.length} enquiries` : 'Delete enquiry', (body, close) => {
+    const pw = pwField('Master password', { autocomplete: 'current-password' });
+    const msg = el('p', { class: 'err' });
+    const go = async () => {
+      msg.textContent = '';
+      if (!pw.input.value) { msg.textContent = 'Enter your password to confirm.'; return; }
+      try {
+        const r = await api('/leads/delete', { method: 'POST', body: { ids, password: pw.input.value } });
+        leadPicked.clear();
+        close();
+        toast(r.deleted === 1 ? 'Enquiry deleted' : `${r.deleted} enquiries deleted`);
+        after();
+      } catch (err) { msg.textContent = err.message; pw.input.select(); }
+    };
+    body.append(
+      el('p', { class: 'muted' }, `${many ? 'These records' : 'This record'} will be removed permanently — there is no undo.`),
+      el('ul', { class: 'dellist' },
+        ...names.slice(0, 8).map((n) => el('li', {}, n)),
+        names.length > 8 ? el('li', { class: 'muted' }, `and ${names.length - 8} more`) : null),
+      el('div', { class: 'fields' }, pw.node),
+      msg,
+      el('div', { class: 'row', style: 'margin-top:.4rem' },
+        el('button', { class: 'btn btn--danger', onclick: go }, many ? `Delete ${ids.length} enquiries` : 'Delete enquiry'),
+        el('button', { class: 'btn btn--ghost', onclick: close }, 'Cancel')));
+    on(pw.input, 'keydown', (e) => { if (e.key === 'Enter') go(); });
+    setTimeout(() => pw.input.focus(), 60);
+  });
 }
 
 async function leadDrawer(id, tutors, view) {
@@ -270,7 +333,7 @@ async function leadDrawer(id, tutors, view) {
       el('div', { class: 'sec' },
         el('button', {
           class: 'btn btn--danger btn--sm',
-          onclick: async () => { if (confirm(`Delete the enquiry from ${lead.name}?`)) { await api(`/leads/${id}`, { method: 'DELETE' }); close(); viewLeads(view); } },
+          onclick: () => { close(); deleteLeads([id], [lead.name], () => viewLeads(view)); },
         }, 'Delete enquiry')),
     );
   });
@@ -755,8 +818,192 @@ function startWatching() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden) pollEnquiries(); });
 }
 
+/* ---------------- fees & plans ---------------- */
+/* Everything the public pricing page shows, editable here. Saving writes the
+   figures next to the database and rebuilds the site, so the change is live. */
+async function viewPricing(view) {
+  const P = await api('/pricing');
+  P.durations = P.durations.map(Number);
+
+  const priceOf = (key, duration, per) => {
+    const rate = Number(P.regions[key]?.rates?.[duration] || 0);
+    const plan = P.plans.find((p) => Number(p.per) === Number(per));
+    return Math.round(rate * per * (1 - Number(plan?.discount || 0) / 100));
+  };
+
+  const bind = (obj, key, attrs = {}, after) => {
+    const input = el('input', { value: obj[key] ?? '', ...attrs });
+    on(input, 'input', () => {
+      obj[key] = attrs.type === 'number' ? (input.value === '' ? 0 : Number(input.value)) : input.value;
+      if (after) after();
+    });
+    return input;
+  };
+  const labelled = (text, node, hint) => el('label', { class: 'f' }, el('span', {}, text), node,
+    hint ? el('small', { class: 'hint' }, hint) : null);
+
+  /* --- live preview of one country, exactly as a visitor would see it --- */
+  let pvRegion = Object.keys(P.regions)[0];
+  let pvDuration = P.durations[0];
+  const pvBox = el('div', { class: 'pv' });
+  const drawPreview = () => {
+    const r = P.regions[pvRegion];
+    if (!r) { pvBox.replaceChildren(el('p', { class: 'muted' }, 'Add a country to see the preview.')); return; }
+    pvBox.replaceChildren(...P.plans.map((p) => el('div', { class: `pv__card${p.badge ? ' on' : ''}` },
+      p.badge ? el('span', { class: 'pv__badge' }, p.badge) : null,
+      el('b', {}, p.name || 'Untitled'),
+      el('span', { class: 'muted' }, p.blurb || ''),
+      el('div', { class: 'pv__amt' }, `${r.symbol || ''}${priceOf(pvRegion, pvDuration, p.per)}`, el('small', {}, '/ month')),
+      el('span', { class: 'muted' }, `${p.per} × ${pvDuration} min a week${Number(p.discount) ? ` · ${p.discount}% off` : ''}`))));
+  };
+
+  /* --- plans --- */
+  const plansBox = el('div', { class: 'plan-list' });
+  const drawPlans = () => {
+    plansBox.replaceChildren(...P.plans.map((p, i) => el('div', { class: 'plan-edit' },
+      el('div', { class: 'plan-edit__head' },
+        el('b', {}, `Plan ${i + 1}`),
+        el('button', { class: 'btn btn--danger btn--sm', onclick: () => {
+          if (P.plans.length < 2) return toast('Keep at least one plan');
+          P.plans.splice(i, 1); drawPlans(); drawPreview();
+        } }, 'Remove')),
+      el('div', { class: 'fields' },
+        labelled('Plan name', bind(p, 'name', { maxlength: 40 }, drawPreview)),
+        labelled('Classes a week', bind(p, 'per', { type: 'number', min: 1, max: 14, step: 1 }, drawPreview)),
+        labelled('Multi-class discount', bind(p, 'discount', { type: 'number', min: 0, max: 90, step: 0.5 }, drawPreview), '% off this plan'),
+        labelled('Badge', bind(p, 'badge', { maxlength: 30, placeholder: 'e.g. Most popular' }, drawPreview), 'Leave empty for no ribbon')),
+      labelled('Tagline', bind(p, 'blurb', { maxlength: 120, placeholder: 'Our recommended pace' }, drawPreview)),
+      (() => {
+        const ta = el('textarea', { rows: 3, placeholder: 'Leave empty to list the classes automatically' });
+        ta.value = (p.features || []).join('\n');
+        on(ta, 'input', () => { p.features = ta.value.split('\n').map((l) => l.trim()).filter(Boolean); });
+        return labelled('Bullet points on the card', ta, 'One per line');
+      })())));
+  };
+
+  /* --- countries and rates --- */
+  const ratesBox = el('div', { class: 'scroll' });
+  const drawRates = () => {
+    const keys = Object.keys(P.regions);
+    ratesBox.replaceChildren(el('table', { class: 'tbl tbl--edit' },
+      el('thead', {}, el('tr', {},
+        el('th', {}, 'Country'), el('th', {}, 'Tab label'), el('th', {}, 'Symbol'), el('th', {}, 'Currency'),
+        ...P.durations.map((d) => el('th', { class: 'num' }, `${d} min`)),
+        el('th', {}, ''))),
+      el('tbody', {}, ...keys.map((k) => {
+        const r = P.regions[k];
+        return el('tr', {},
+          el('td', {}, bind(r, 'label', { maxlength: 60 }, () => { drawPreview(); drawRegionPicker(); })),
+          el('td', {}, bind(r, 'short', { maxlength: 20, style: 'width:6rem' })),
+          el('td', {}, bind(r, 'symbol', { maxlength: 6, style: 'width:4.5rem' }, drawPreview)),
+          el('td', {}, bind(r, 'code', { maxlength: 6, style: 'width:5rem' })),
+          ...P.durations.map((d) => el('td', { class: 'num' },
+            bind(r.rates, d, { type: 'number', min: 0, step: 0.05, style: 'width:6rem;text-align:right' }, drawPreview))),
+          el('td', {}, el('button', { class: 'btn btn--danger btn--sm', onclick: () => {
+            if (keys.length < 2) return toast('Keep at least one country');
+            delete P.regions[k];
+            if (pvRegion === k) pvRegion = Object.keys(P.regions)[0];
+            drawRates(); drawRegionPicker(); drawPreview();
+          } }, 'Remove')));
+      }))));
+  };
+
+  const addRegion = () => {
+    const name = prompt('Country name, e.g. Malaysia');
+    if (!name) return;
+    let key = name.toLowerCase().replace(/[^a-z]/g, '').slice(0, 8) || 'xx';
+    while (P.regions[key]) key += 'x';
+    P.regions[key] = { label: name.trim(), short: name.trim().slice(0, 12), symbol: '$', code: 'USD',
+      rates: Object.fromEntries(P.durations.map((d) => [d, 0])) };
+    drawRates(); drawRegionPicker(); drawPreview();
+  };
+
+  /* --- class lengths --- */
+  const durInput = el('input', { value: P.durations.join(', '), style: 'max-width:200px' });
+  on(durInput, 'change', () => {
+    const next = durInput.value.split(/[,\s]+/).map(Number).filter((d) => Number.isInteger(d) && d > 0 && d <= 240);
+    if (!next.length) { durInput.value = P.durations.join(', '); return toast('Keep at least one class length'); }
+    P.durations = [...new Set(next)].sort((a, z) => a - z);
+    durInput.value = P.durations.join(', ');
+    for (const r of Object.values(P.regions)) {
+      const rates = {};
+      for (const d of P.durations) rates[d] = Number(r.rates[d] || 0);
+      r.rates = rates;
+    }
+    if (!P.durations.includes(pvDuration)) pvDuration = P.durations[0];
+    drawRates(); drawDurationPicker(); drawPreview();
+  });
+
+  /* --- preview pickers --- */
+  const regionPick = el('select', { style: 'max-width:220px' });
+  const durationPick = el('select', { style: 'max-width:160px' });
+  const drawRegionPicker = () => {
+    regionPick.replaceChildren(...Object.entries(P.regions).map(([k, r]) =>
+      el('option', { value: k, selected: k === pvRegion || null }, r.label || k)));
+  };
+  const drawDurationPicker = () => {
+    durationPick.replaceChildren(...P.durations.map((d) =>
+      el('option', { value: d, selected: d === pvDuration || null }, `${d} minutes`)));
+  };
+  on(regionPick, 'change', () => { pvRegion = regionPick.value; drawPreview(); });
+  on(durationPick, 'change', () => { pvDuration = Number(durationPick.value); drawPreview(); });
+
+  /* --- publishing --- */
+  const msg = el('p', { class: 'err' });
+  const publish = el('button', { class: 'btn btn--gold' }, 'Publish to the website');
+  on(publish, 'click', async () => {
+    msg.textContent = ''; publish.disabled = true; publish.textContent = 'Publishing…';
+    try {
+      const saved = await api('/pricing', { method: 'PUT', body: { regions: P.regions, durations: P.durations, plans: P.plans } });
+      toast(saved.published ? 'Published — the website is updated' : 'Saved, but the website did not rebuild');
+      if (!saved.published) msg.textContent = `The site could not be rebuilt: ${saved.log || 'unknown error'}`;
+      else viewPricing(view);
+    } catch (err) { msg.textContent = err.message; }
+    finally { publish.disabled = false; publish.textContent = 'Publish to the website'; }
+  });
+
+  const reset = el('button', { class: 'btn btn--ghost' }, 'Restore original prices');
+  on(reset, 'click', async () => {
+    if (!confirm('Put every plan and price back to the ones the site launched with?')) return;
+    try { const r = await api('/pricing/reset', { method: 'POST' }); toast(r.published ? 'Restored and published' : 'Restored'); viewPricing(view); }
+    catch (err) { msg.textContent = err.message; }
+  });
+
+  drawPlans(); drawRates(); drawRegionPicker(); drawDurationPicker(); drawPreview();
+
+  view.replaceChildren(
+    head('Fees & Plans',
+      P.custom ? `Your own prices · last published ${dt(P.updated_at)}` : 'Showing the prices the site launched with',
+      reset, publish),
+    msg,
+    el('div', { class: 'card' },
+      el('div', { class: 'sec-label' }, 'Preview'),
+      el('div', { class: 'row', style: 'margin-bottom:.8rem' }, regionPick, durationPick),
+      pvBox,
+      el('p', { class: 'muted', style: 'margin-top:.7rem' },
+        'This is what the pricing page will show once you publish. Nothing changes on the website until then.')),
+    el('div', { class: 'card' },
+      el('div', { class: 'sec-label' }, 'Plans'),
+      plansBox,
+      el('div', { class: 'row', style: 'margin-top:.8rem' },
+        el('button', { class: 'btn btn--ghost btn--sm', onclick: () => {
+          const last = P.plans[P.plans.length - 1];
+          P.plans.push({ per: Number(last?.per || 0) + 1, name: '', blurb: '', badge: '', discount: 0, features: [] });
+          drawPlans(); drawPreview();
+        } }, 'Add a plan'))),
+    el('div', { class: 'card' },
+      el('div', { class: 'sec-label' }, 'Countries & rates'),
+      el('p', { class: 'muted', style: 'margin:-.3rem 0 .8rem' },
+        'Each rate is the monthly fee for one class a week. A plan multiplies it by its classes a week, then takes off that plan’s discount.'),
+      el('div', { class: 'row', style: 'margin-bottom:.9rem' }, labelled('Class lengths in minutes', durInput, 'Separate with commas')),
+      ratesBox,
+      el('div', { class: 'row', style: 'margin-top:.8rem' },
+        el('button', { class: 'btn btn--ghost btn--sm', onclick: addRegion }, 'Add a country'))),
+  );
+}
+
 /* ---------------- router ---------------- */
-const RENDER = { dashboard: viewDashboard, leads: viewLeads, tutors: viewTutors, invoices: viewInvoices, expenses: viewExpenses, pnl: viewPnl, security: viewSecurity, settings: viewSettings };
+const RENDER = { dashboard: viewDashboard, leads: viewLeads, tutors: viewTutors, invoices: viewInvoices, expenses: viewExpenses, pnl: viewPnl, pricing: viewPricing, security: viewSecurity, settings: viewSettings };
 
 async function route() {
   document.querySelectorAll('.drawer').forEach((d) => d.remove());   /* never leave one open across views */

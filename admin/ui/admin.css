@@ -210,3 +210,36 @@ label.f>span{display:block;font-size:.76rem;font-weight:650;color:var(--dim);mar
 .heads{margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--line)}
 .heads__row{display:flex;justify-content:space-between;font-size:.86rem;padding:.25rem 0;color:var(--dim)}
 .heads__row b{color:var(--text);font-variant-numeric:tabular-nums}
+
+/* enquiry rows: pick, phone, and the per-row actions */
+.tbl th.pickcol,.tbl td.pickcol{width:1.9rem;padding-right:0}
+.tbl .pickcol input{width:15px;height:15px;accent-color:var(--green-800);cursor:pointer;display:block}
+.tbl td.tel{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl th.acts,.tbl td.acts{text-align:right;white-space:nowrap}
+.tbl td.acts .btn+.btn{margin-left:.35rem}
+.tbl td.nm{white-space:nowrap}
+.tbl td.when{white-space:nowrap}
+.tbl tbody tr.picked{background:var(--green-50)}
+.pickbar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.7rem;padding:.55rem .8rem;
+  border:1.5px solid var(--green-800);border-radius:12px;background:var(--green-50);font-size:.88rem}
+.pickbar b{margin-right:auto}
+.dellist{margin:.6rem 0 1rem;padding-left:1.1rem;font-size:.9rem;color:var(--text)}
+.dellist li{padding:.1rem 0}
+@media(max-width:700px){.tbl th.acts,.tbl td.acts{text-align:left}}
+
+/* fees & plans editor */
+.f small.hint{display:block;font-size:.72rem;color:var(--dim);margin-top:.2rem}
+.tbl--edit td{padding:.35rem .4rem}
+.tbl--edit input{padding:.4rem .5rem;font-size:.85rem;width:100%}
+.plan-list{display:grid;gap:.9rem}
+.plan-edit{border:1.5px solid var(--line);border-radius:12px;padding:.85rem .9rem;display:grid;gap:.7rem}
+.plan-edit__head{display:flex;align-items:center;justify-content:space-between}
+.plan-edit__head b{font-size:.78rem;text-transform:uppercase;letter-spacing:.09em;color:var(--dim)}
+.plan-edit textarea{width:100%;min-height:4.6rem;resize:vertical}
+.pv{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.7rem}
+.pv__card{position:relative;border:1.5px solid var(--line);border-radius:12px;padding:1rem .9rem .85rem;display:grid;gap:.15rem;align-content:start}
+.pv__card.on{border-color:var(--gold-600);box-shadow:0 0 0 3px rgba(178,127,44,.12)}
+.pv__badge{position:absolute;top:-.62rem;left:.9rem;background:var(--gold-600);color:#fff;font-size:.66rem;
+  text-transform:uppercase;letter-spacing:.08em;padding:.15rem .5rem;border-radius:99px}
+.pv__amt{font-size:1.5rem;font-weight:700;margin:.3rem 0 .15rem;font-variant-numeric:tabular-nums}
+.pv__amt small{font-size:.72rem;font-weight:500;color:var(--dim);margin-left:.2rem}

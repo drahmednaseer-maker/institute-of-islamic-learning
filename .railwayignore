@@ -4,3 +4,5 @@ dist
 admin/data
 brand
 .git
+dist.next
+dist.old

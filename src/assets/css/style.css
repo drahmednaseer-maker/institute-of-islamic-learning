@@ -508,6 +508,8 @@ html[data-theme=dark] .to-top{background:var(--gold-500);color:#231704}
 .footer__area{font-size:.88rem;color:#A9BDB4;max-width:32ch}
 .footer__contact .btn{margin-top:1.1rem}
 .footer__bottom{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;padding-block:1.25rem;padding-bottom:5.5rem;border-top:1px solid rgba(255,255,255,.1);font-size:.85rem;color:#93A9A0}
+.footer__by a{color:var(--gold-300,#E3C27E);text-decoration:none;border-bottom:1px solid rgba(227,194,126,.35);padding-bottom:1px}
+.footer__by a:hover,.footer__by a:focus-visible{color:#fff;border-bottom-color:currentColor}
 .footer__dua{font-family:var(--f-display);font-size:1.15rem;color:var(--gold-300)}
 @media (max-width:900px){.footer__grid{grid-template-columns:1fr 1fr}}
 

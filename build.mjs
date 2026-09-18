@@ -10,7 +10,9 @@ import { CONTACT, SOCIAL, TRIAL, LEADS_ENDPOINT } from './src/data/site.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const SRC = join(root, 'src');
-const OUT = join(root, 'dist');
+/* the admin panel builds into a staging folder and swaps it in, so a rebuild
+   never leaves the live site missing for a moment */
+const OUT = process.env.OUT_DIR ? join(root, process.env.OUT_DIR) : join(root, 'dist');
 /* Set SITE_URL in the deploy environment; it drives canonical links, OG tags
    and the sitemap. Change it once a custom domain is attached. */
 const SITE = (process.env.SITE_URL || 'https://institute-of-islamic-learning.vercel.app').replace(/\/$/, '');
@@ -110,9 +112,12 @@ function renderPricing() {
     )
     .join('\n');
 
-  const rateJson = JSON.stringify(
-    Object.fromEntries(Object.entries(REGIONS).map(([k, r]) => [k, { symbol: r.symbol, code: r.code, rates: r.rates }]))
-  );
+  /* the calculator needs the same discounts the cards were priced with,
+     otherwise an edited plan and its estimate drift apart */
+  const rateJson = JSON.stringify({
+    regions: Object.fromEntries(Object.entries(REGIONS).map(([k, r]) => [k, { symbol: r.symbol, code: r.code, rates: r.rates }])),
+    plans: PLANS.map((p) => ({ per: p.per, discount: Number(p.discount || 0) })),
+  });
 
   return `<div data-pricing>
     <div class="tabs" role="tablist" aria-label="Region" data-tabgroup="region">${regionTabs}</div>
@@ -167,6 +172,10 @@ for (const file of pageFiles) {
   html = html.replace('<!--PRICING-->', renderPricing);
   html = html.replace('<!--CALC_REGIONS-->', () =>
     Object.entries(REGIONS).map(([k, r]) => `<option value="${k}">${r.label} (${r.code})</option>`).join(''));
+  html = html.replace('<!--CALC_PERWEEK-->', () => {
+    const mid = PLANS[Math.min(2, PLANS.length - 1)];
+    return PLANS.map((p) => `<option value="${p.per}"${p === mid ? ' selected' : ''}>${p.per} ${p.per === 1 ? 'class' : 'classes'}</option>`).join('');
+  });
   /* mark the active nav item */
   html = html.replaceAll(`data-nav="${vars.nav}"`, `data-nav="${vars.nav}" aria-current="page"`);
   writeFileSync(join(OUT, file), html);

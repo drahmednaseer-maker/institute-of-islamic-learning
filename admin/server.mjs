@@ -11,6 +11,7 @@ import { isAuthed, issueCookie, clearCookie, checkPassword, setPassword, hasPass
 import { formatLead, formatLeadOneLine, formatInvoice, formatTutor, waLink, money, prettyDate } from './lib/format.mjs';
 import { invoiceHTML } from './lib/invoice-html.mjs';
 import { sendMail, mailReady, mailConfig, mailMissing } from './lib/mail.mjs';
+import { livePricing, priceOf, savePricing, clearPricing, rebuildSite, hasPricingOverride } from './lib/pricing.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const UI = join(here, 'ui');
@@ -131,7 +132,7 @@ route('POST', /^\/api\/recovery\/reset$/, async (req, res) => {
    should not be enough to lock the owner out. */
 route('POST', /^\/api\/password$/, async (req, res) => {
   const b = await readBody(req);
-  if (!checkPassword(b.current)) return bad(res, 'Your current password is not correct', 401);
+  if (!checkPassword(b.current)) return bad(res, 'Your current password is not correct', 403);
   const next = String(b.password || '');
   if (next.length < 8) return bad(res, 'The new password must be at least 8 characters', 400);
   if (next === String(b.current)) return bad(res, 'The new password is the same as the current one', 400);
@@ -202,9 +203,34 @@ route('PATCH', /^\/api\/leads\/([\w-]+)$/, async (req, res, { params }) => {
   return ok(res, leadWithTutor(params[0]));
 });
 
-route('DELETE', /^\/api\/leads\/([\w-]+)$/, async (_req, res, { params }) => {
-  db.prepare('DELETE FROM leads WHERE id = ?').run(params[0]);
-  return ok(res);
+/* Deleting an enquiry is permanent, so it costs the master password: a browser
+   left signed in should not be enough to erase the record. Only wrong guesses
+   count against the throttle, so a real clear-out is never blocked. */
+const delFails = new Map();
+const FAIL_WINDOW = 15 * 60_000;
+const lockedOut = (ip) => {
+  const rec = delFails.get(ip);
+  return !!rec && Date.now() - rec.start < FAIL_WINDOW && rec.n >= 8;
+};
+const noteFail = (ip) => {
+  const rec = delFails.get(ip);
+  if (!rec || Date.now() - rec.start > FAIL_WINDOW) delFails.set(ip, { start: Date.now(), n: 1 });
+  else rec.n += 1;
+  if (delFails.size > 2000) delFails.clear();
+};
+
+route('POST', /^\/api\/leads\/delete$/, async (req, res) => {
+  const ip = req.socket.remoteAddress || 'unknown';
+  if (lockedOut(ip)) return bad(res, 'Too many wrong passwords. Try again in a few minutes.', 429);
+  const body = await readBody(req);
+  if (!checkPassword(body.password)) { noteFail(ip); return bad(res, 'That password is not correct', 403); }
+  const ids = (Array.isArray(body.ids) ? body.ids : [body.ids]).filter(Boolean).map(String);
+  if (!ids.length) return bad(res, 'Nothing selected');
+  delFails.delete(ip);
+  const stmt = db.prepare('DELETE FROM leads WHERE id = ?');
+  let deleted = 0;
+  for (const id of ids) deleted += stmt.run(id).changes;
+  return ok(res, { ok: true, deleted });
 });
 
 route('GET', /^\/api\/leads\/([\w-]+)\/share$/, async (_req, res, { params }) => {
@@ -350,25 +376,83 @@ route('GET', /^\/api\/invoices\/([\w-]+)\/share$/, async (_req, res, { params })
 });
 
 route('GET', /^\/api\/pricing\/regions$/, async (_req, res) => {
-  const { REGIONS, DURATIONS } = await import('../src/data/pricing.mjs');
-  const codes = [...new Set([getSetting('base_currency'), ...Object.values(REGIONS).map((r) => r.code)])].filter(Boolean);
+  const { regions, durations } = livePricing();
+  const codes = [...new Set([getSetting('base_currency'), ...Object.values(regions).map((r) => r.code)])].filter(Boolean);
   return ok(res, {
-    regions: Object.entries(REGIONS).map(([k, r]) => ({ key: k, label: r.label, code: r.code })),
-    durations: DURATIONS,
+    regions: Object.entries(regions).map(([k, r]) => ({ key: k, label: r.label, code: r.code })),
+    durations,
     currencies: codes,
   });
+});
+
+/* --- fee plans: edited here, published to the website --- */
+route('GET', /^\/api\/pricing$/, async (_req, res) => ok(res, livePricing()));
+
+const KEY_RE = /^[a-z][a-z0-9]{1,7}$/;
+route('PUT', /^\/api\/pricing$/, async (req, res) => {
+  const b = await readBody(req);
+
+  const durations = (Array.isArray(b.durations) ? b.durations : []).map(Number)
+    .filter((d) => Number.isInteger(d) && d > 0 && d <= 240);
+  if (!durations.length) return bad(res, 'Keep at least one class length');
+
+  const regions = {};
+  for (const [rawKey, r] of Object.entries(b.regions || {})) {
+    const key = String(rawKey).toLowerCase().trim();
+    if (!KEY_RE.test(key)) return bad(res, `"${rawKey}" is not a usable country code — use 2 to 8 letters, e.g. us or sa`);
+    const label = str(r?.label, 60);
+    if (!label) return bad(res, `Give the country with code "${key}" a name`);
+    const rates = {};
+    for (const d of durations) {
+      const v = Number(r?.rates?.[d]);
+      if (!Number.isFinite(v) || v < 0) return bad(res, `${label}: the ${d}-minute rate must be a number`);
+      rates[d] = v;
+    }
+    regions[key] = {
+      label, short: str(r?.short, 20) || label, symbol: String(r?.symbol ?? '').slice(0, 6),
+      code: (str(r?.code, 6) || 'USD').toUpperCase(), rates,
+    };
+  }
+  if (!Object.keys(regions).length) return bad(res, 'Keep at least one country');
+
+  const plans = [];
+  for (const p of Array.isArray(b.plans) ? b.plans : []) {
+    const per = Number(p?.per);
+    if (!Number.isInteger(per) || per < 1 || per > 14) return bad(res, 'Classes per week must be a whole number between 1 and 14');
+    const name = str(p?.name, 40);
+    if (!name) return bad(res, 'Every plan needs a name');
+    const discount = Number(p?.discount || 0);
+    if (!Number.isFinite(discount) || discount < 0 || discount > 90) return bad(res, `${name}: the discount must be between 0 and 90%`);
+    plans.push({
+      per, name, badge: str(p?.badge, 30) || '', blurb: str(p?.blurb, 120) || '', discount,
+      features: (Array.isArray(p?.features) ? p.features : []).map((f) => str(f, 120)).filter(Boolean).slice(0, 10),
+    });
+  }
+  if (!plans.length) return bad(res, 'Keep at least one plan');
+  if (new Set(plans.map((p) => p.per)).size !== plans.length) return bad(res, 'Two plans have the same classes per week');
+  plans.sort((a, z) => a.per - z.per);
+
+  savePricing({ regions, durations, plans });
+  const build = await rebuildSite();
+  return ok(res, { ...livePricing(), published: build.ok, log: build.ok ? '' : build.log.slice(-400) });
+});
+
+route('POST', /^\/api\/pricing\/reset$/, async (_req, res) => {
+  clearPricing();
+  const build = await rebuildSite();
+  return ok(res, { ...livePricing(), published: build.ok, log: build.ok ? '' : build.log.slice(-400) });
 });
 
 /* Build an invoice from the same plan maths the public pricing page uses. */
 route('POST', /^\/api\/invoices\/from-plan$/, async (req, res) => {
   const b = await readBody(req);
-  const { REGIONS, monthly } = await import('../src/data/pricing.mjs');
+  const pricing = livePricing();
   const region = String(b.region || 'us');
   const duration = String(b.duration || '30');
   const per = num(b.perweek, 4);
-  const r = REGIONS[region];
+  const r = pricing.regions[region];
   if (!r || !r.rates[duration]) return bad(res, 'Unknown region or class length');
-  const amount = monthly(region, duration, per);
+  const amount = priceOf(pricing, region, duration, per);
   const label = `${str(b.course, 120) || 'Quran classes'} — ${per} × ${duration} min per week${b.period ? ` (${str(b.period, 40)})` : ''}`;
   return ok(res, {
     currency: r.code,
@@ -591,5 +675,13 @@ const server = createServer(async (req, res) => {
     return res.end(body);
   } catch { return bad(res, 'Not found', 404); }
 });
+
+/* dist/ is built at deploy time, before the data volume is mounted — so prices
+   saved in the backend would be missing from a freshly deployed site. Rebuild
+   once at boot when there is an override to apply. */
+if (hasPricingOverride()) {
+  const build = await rebuildSite();
+  console.log(build.ok ? '  Rebuilt the site with your saved fee plans' : `  Could not rebuild the site: ${build.log}`);
+}
 
 server.listen(PORT, () => console.log(`  Admin backend on http://localhost:${PORT}\n`));

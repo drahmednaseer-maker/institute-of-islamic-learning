@@ -6,3 +6,5 @@ dist/
 .vercel
 .env*
 admin/data/
+dist.next/
+dist.old/
