@@ -109,8 +109,12 @@ There is no backend. On submit the form validates in the browser, composes a for
 A separate application under `admin/` — enquiries, tutors, invoices, expenses and a
 monthly profit & loss report. Plain `node:http` and `node:sqlite`, no dependencies.
 
-Live at **https://iil-admin-production.up.railway.app** (Railway, with a persistent
-volume mounted at `/data` holding the SQLite file).
+One Railway service serves everything at **https://iil-admin-production.up.railway.app** —
+the website at `/`, the admin at `/admin`, the API at `/api` and printable invoices at
+`/invoice/:id`. A persistent volume at `/data` holds the SQLite file.
+
+Set `SITE_URL` in the environment to whatever host is live; it drives canonical links,
+OG tags, the sitemap and robots.txt.
 
 ```bash
 npm run admin      # http://localhost:4400

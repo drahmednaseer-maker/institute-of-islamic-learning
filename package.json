@@ -6,8 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "dev": "node build.mjs && node --run serve",
-    "serve": "npx --yes serve dist -l 4321",
+    "dev": "node build.mjs && node admin/server.mjs",
     "start": "node admin/server.mjs",
     "admin": "node admin/server.mjs"
   },
