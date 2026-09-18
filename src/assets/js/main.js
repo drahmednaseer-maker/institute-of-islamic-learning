@@ -237,33 +237,6 @@
     render();
   }
 
-  /* ---------------- fee calculator ---------------- */
-  const calc = $('#calc');
-  if (calc) {
-    let RATES = null;
-    try { RATES = JSON.parse($('#rateData')?.textContent || 'null'); } catch (e) {}
-    if (RATES && !RATES.regions) RATES = null;
-    const out = $('#calcAmount');
-    const sub = $('#calcSub');
-    const run = () => {
-      if (!RATES || !out) return;
-      const region = $('[name=region]', calc).value;
-      const dur = $('[name=duration]', calc).value;
-      const per = Number($('[name=perweek]', calc).value);
-      const r = RATES.regions[region];
-      if (!r) return;
-      const rate = r.rates[dur];
-      const plan = RATES.plans.find((p) => p.per === per);
-      const disc = (plan ? plan.discount : 0) / 100;
-      const total = rate * per * (1 - disc);
-      const rounded = Math.round(total);
-      out.textContent = r.symbol + rounded;
-      if (sub) sub.textContent = `${per * 4} classes / month · ${dur} minutes each${disc ? ` · ${Math.round(disc * 100)}% multi-class discount applied` : ''}`;
-    };
-    $$('select', calc).forEach((s) => on(s, 'change', run));
-    run();
-  }
-
   /* ---------------- testimonials ---------------- */
   const track = $('#ttrack');
   if (track) {

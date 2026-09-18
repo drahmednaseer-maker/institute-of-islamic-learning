@@ -162,7 +162,7 @@ const renderCourseSchema = () => COURSES.map((c, i) => JSON.stringify({
   },
 })).join(',\n');
 
-/* Build every region x duration pricing panel plus the JSON the calculator reads. */
+/* Build every region x duration pricing panel. */
 function renderPricing() {
   const regionTabs = Object.entries(REGIONS)
     .map(([k, r], i) => `<button type="button" class="tab" role="tab" data-value="${k}" aria-selected="${i === 0}">` +
@@ -203,19 +203,11 @@ function renderPricing() {
     )
     .join('\n');
 
-  /* the calculator needs the same discounts the cards were priced with,
-     otherwise an edited plan and its estimate drift apart */
-  const rateJson = JSON.stringify({
-    regions: Object.fromEntries(Object.entries(REGIONS).map(([k, r]) => [k, { symbol: r.symbol, code: r.code, rates: r.rates }])),
-    plans: PLANS.map((p) => ({ per: p.per, discount: Number(p.discount || 0) })),
-  });
-
   return `<div data-pricing>
     <div class="tabs" role="tablist" aria-label="Region" data-tabgroup="region">${regionTabs}</div>
     ${durTabs}
     ${panels}
-  </div>
-  <script type="application/json" id="rateData">${rateJson}</script>`;
+  </div>`;
 }
 
 rmSync(OUT, { recursive: true, force: true });
@@ -270,8 +262,6 @@ for (const file of pageFiles) {
   html = sections(html, vars);
   html = fill(html, vars);
   html = html.replaceAll('<!--PRICING-->', renderPricing);
-  html = html.replaceAll('<!--CALC_REGIONS-->', () =>
-    Object.entries(REGIONS).map(([k, r]) => `<option value="${k}">${r.label} (${r.code})</option>`).join(''));
   html = html.replaceAll('<!--COURSE_INDEX-->', renderCourseIndex);
   html = html.replaceAll('<!--COURSE_CARDS-->', renderCourseCards);
   html = html.replaceAll('<!--COURSE_HOME-->', renderCourseHome);
@@ -284,15 +274,6 @@ for (const file of pageFiles) {
   html = html.replaceAll('<!--PLAN_DAYS-->', () => {
     const pick = PLANS.find((p) => p.badge) || PLANS[Math.floor(PLANS.length / 2)];
     return PLANS.map((p) => `<option${p === pick ? ' selected' : ''}>${p.per} classes per week</option>`).join('');
-  });
-  html = html.replaceAll('<!--CALC_DURATION-->', () => (DURATIONS.length > 1
-    ? `<label class="field field--half"><span class="field__label">Class length</span><select name="duration">${
-      DURATIONS.map((d, i) => `<option value="${d}"${i ? '' : ' selected'}>${d} minutes</option>`).join('')
-    }</select></label>`
-    : `<input type="hidden" name="duration" value="${DURATIONS[0]}">`));
-  html = html.replaceAll('<!--CALC_PERWEEK-->', () => {
-    const pick = PLANS.find((p) => p.badge) || PLANS[Math.floor(PLANS.length / 2)];
-    return PLANS.map((p) => `<option value="${p.per}"${p === pick ? ' selected' : ''}>${p.per} ${p.per === 1 ? 'class' : 'classes'}</option>`).join('');
   });
   /* mark the active nav item */
   html = html.replaceAll(`data-nav="${vars.nav}"`, `data-nav="${vars.nav}" aria-current="page"`);
