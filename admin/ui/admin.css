@@ -137,3 +137,18 @@ label.f>span{display:block;font-size:.76rem;font-weight:650;color:var(--dim);mar
   body{background:#fff}.shell{grid-template-columns:1fr}
   .card{box-shadow:none;border:0}
 }
+
+/* password reveal + recovery */
+.pw{position:relative;display:block}
+.pw input{padding-right:2.6rem}
+.pw__eye{position:absolute;right:.35rem;top:50%;translate:0 -50%;width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:var(--dim)}
+.pw__eye:hover{background:var(--green-50);color:var(--text)}
+.pw__eye svg{width:19px;height:19px;fill:currentColor}
+.pw__eye .off{display:none}
+.pw__eye[aria-pressed="true"] svg{display:none}
+.pw__eye[aria-pressed="true"] .off{display:block}
+.linkish{display:block;width:100%;margin-top:.8rem;font-size:.85rem;font-weight:600;color:var(--dim);text-decoration:underline;text-underline-offset:3px}
+.linkish:hover{color:var(--green-800)}
+.keybox{font-family:var(--mono);font-size:1.05rem;letter-spacing:.08em;text-align:center;padding:.8rem;margin:.6rem 0 .9rem;
+  background:var(--green-50);border:1.5px dashed var(--gold-500);border-radius:10px;word-break:break-all}
+.note{background:#FFF6E5;border:1px solid #F0DCB0;color:#7A5A16;padding:.6rem .8rem;border-radius:9px;font-size:.83rem}

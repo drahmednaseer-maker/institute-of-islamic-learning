@@ -16,11 +16,35 @@
     <h1>Institute of Islamic Learning</h1>
     <p>Admin sign in</p>
     <label class="f"><span>Password</span>
-      <input type="password" name="password" autocomplete="current-password" required autofocus>
+      <span class="pw"><input type="password" name="password" autocomplete="current-password" required autofocus><button type="button" class="pw__eye" data-reveal aria-label="Show password" title="Show password"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5 0-9 4.5-9 7s4 7 9 7 9-4.5 9-7-4-7-9-7m0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9m0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5"/></svg><svg viewBox="0 0 24 24" aria-hidden="true" class="off"><path d="M2.4 3.8 3.8 2.4l17.8 17.8-1.4 1.4-3.2-3.2A10.6 10.6 0 0 1 12 19c-5 0-9-4.5-9-7a8.5 8.5 0 0 1 3.3-5.3zM12 5c5 0 9 4.5 9 7a8.8 8.8 0 0 1-2.2 4.2l-3-3A4.5 4.5 0 0 0 9.8 7.1L7.6 4.9A10.4 10.4 0 0 1 12 5"/></svg></button></span>
     </label>
     <p class="err" id="loginErr"></p>
     <button class="btn btn--gold btn--block" type="submit">Sign in</button>
+    <button type="button" class="linkish" id="forgotBtn">Forgot your password?</button>
   </form>
+
+  <form class="card hide" id="resetForm">
+    <img src="/admin/logo.jpg" alt="">
+    <h1>Reset password</h1>
+    <p>Enter the recovery key you saved from Settings.</p>
+    <label class="f"><span>Recovery key</span>
+      <input name="key" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" required>
+    </label>
+    <label class="f" style="margin-top:.7rem"><span>New password</span>
+      <span class="pw"><input type="password" name="password" autocomplete="new-password" minlength="8" required><button type="button" class="pw__eye" data-reveal aria-label="Show password" title="Show password"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5 0-9 4.5-9 7s4 7 9 7 9-4.5 9-7-4-7-9-7m0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9m0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5"/></svg><svg viewBox="0 0 24 24" aria-hidden="true" class="off"><path d="M2.4 3.8 3.8 2.4l17.8 17.8-1.4 1.4-3.2-3.2A10.6 10.6 0 0 1 12 19c-5 0-9-4.5-9-7a8.5 8.5 0 0 1 3.3-5.3zM12 5c5 0 9 4.5 9 7a8.8 8.8 0 0 1-2.2 4.2l-3-3A4.5 4.5 0 0 0 9.8 7.1L7.6 4.9A10.4 10.4 0 0 1 12 5"/></svg></button></span>
+    </label>
+    <p class="err" id="resetErr"></p>
+    <button class="btn btn--gold btn--block" type="submit">Set new password</button>
+    <button type="button" class="linkish" id="backBtn">Back to sign in</button>
+  </form>
+
+  <div class="card hide" id="resetDone">
+    <h1>Password changed</h1>
+    <p>Save this new recovery key — the old one no longer works.</p>
+    <div class="keybox" id="newKey"></div>
+    <button class="btn btn--ghost btn--block" id="copyKey" type="button">Copy recovery key</button>
+    <button class="btn btn--gold btn--block" id="doneBtn" type="button" style="margin-top:.5rem">Continue to the admin</button>
+  </div>
 </div>
 
 <div id="app" class="shell hide">

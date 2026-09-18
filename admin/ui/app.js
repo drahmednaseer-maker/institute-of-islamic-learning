@@ -1,5 +1,6 @@
 /* Admin UI — vanilla, no build step. */
 const $ = (s, c = document) => c.querySelector(s);
+const on = (node, ev, fn, opts) => node && node.addEventListener(ev, fn, opts);
 const el = (tag, attrs = {}, ...kids) => {
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -19,7 +20,8 @@ async function api(path, opts = {}) {
     ...opts,
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
-  if (res.status === 401) { showLogin(); throw new Error('Not signed in'); }
+  const data401 = res.status === 401;
+  if (data401 && !path.startsWith('/recovery/reset') && !path.startsWith('/login')) { showLogin(); throw new Error('Not signed in'); }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data;
@@ -554,6 +556,10 @@ async function viewSettings(view) {
   const terms = el('textarea', {}, s.invoice_terms || '');
   const rates = el('textarea', {}, s.fx_rates || '{}');
   const pass = el('input', { type: 'password', placeholder: 'Leave blank to keep current', autocomplete: 'new-password' });
+  const eye = el('button', { type: 'button', class: 'pw__eye', 'data-reveal': '', 'aria-label': 'Show password' },
+    el('span', { html: '<svg viewBox="0 0 24 24"><path d="M12 5c-5 0-9 4.5-9 7s4 7 9 7 9-4.5 9-7-4-7-9-7m0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9m0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5"/></svg>' }));
+  const recovery = await api('/recovery');
+  const keyBox = el('div', { class: 'keybox' }, recovery.key);
 
   view.replaceChildren(
     head('Settings'),
@@ -563,14 +569,22 @@ async function viewSettings(view) {
       el('label', { class: 'f', style: 'margin-top:.8rem' }, el('span', {}, 'Invoice terms'), terms),
       el('label', { class: 'f', style: 'margin-top:.8rem' },
         el('span', {}, `Exchange rates into ${s.base_currency} — JSON, e.g. {"PKR":1,"USD":280}`), rates),
-      el('label', { class: 'f', style: 'margin-top:.8rem' }, el('span', {}, 'New admin password'), pass),
+      el('label', { class: 'f', style: 'margin-top:.8rem' }, el('span', {}, 'New admin password'),
+        el('span', { class: 'pw' }, pass, eye)),
+      el('div', { class: 'sec', style: 'margin-top:1.2rem' },
+        el('h3', {}, 'Recovery key'),
+        el('p', { class: 'note' }, 'Save this somewhere safe. If the password is ever lost, this key resets it from the sign-in screen. Changing the password issues a new key.'),
+        keyBox,
+        el('button', { class: 'btn btn--ghost btn--sm', type: 'button', onclick: () => copy(keyBox.textContent, 'Recovery key copied') }, 'Copy recovery key')),
       el('div', { class: 'row', style: 'margin-top:1rem' },
         el('button', { class: 'btn btn--gold', onclick: async () => {
           try { JSON.parse(rates.value || '{}'); } catch { return toast('Exchange rates must be valid JSON'); }
           const body = { ...f.values(), expense_heads: heads.value, invoice_terms: terms.value, fx_rates: rates.value };
           if (pass.value) body.new_password = pass.value;
-          await api('/settings', { method: 'PATCH', body });
-          toast('Settings saved'); pass.value = '';
+          const saved = await api('/settings', { method: 'PATCH', body });
+          if (saved.recovery_key) { keyBox.textContent = saved.recovery_key; toast('Password changed — save the new recovery key'); }
+          else toast('Settings saved');
+          pass.value = '';
         } }, 'Save settings'))),
   );
 }
@@ -595,6 +609,36 @@ async function route() {
 
 function showLogin() { $('#login').classList.remove('hide'); $('#app').classList.add('hide'); }
 function showApp() { $('#login').classList.add('hide'); $('#app').classList.remove('hide'); route(); }
+
+/* show/hide for any password field marked with a reveal button */
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-reveal]');
+  if (!btn) return;
+  const input = btn.parentElement.querySelector('input');
+  if (!input) return;
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btn.setAttribute('aria-pressed', String(!showing));
+  btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+  btn.title = showing ? 'Show password' : 'Hide password';
+});
+
+/* --- lost password: recovery key -> new password --- */
+const show = (id) => ['loginForm', 'resetForm', 'resetDone'].forEach((n) => $('#' + n).classList.toggle('hide', n !== id));
+on($('#forgotBtn'), 'click', () => { $('#resetErr').textContent = ''; show('resetForm'); $('#resetForm').key.focus(); });
+on($('#backBtn'), 'click', () => show('loginForm'));
+on($('#doneBtn'), 'click', () => showApp());
+
+on($('#resetForm'), 'submit', async (e) => {
+  e.preventDefault();
+  const err = $('#resetErr'); err.textContent = '';
+  try {
+    const r = await api('/recovery/reset', { method: 'POST', body: { key: e.target.key.value, password: e.target.password.value } });
+    $('#newKey').textContent = r.recovery_key;
+    show('resetDone');
+  } catch (ex) { err.textContent = ex.message; }
+});
+on($('#copyKey'), 'click', () => copy($('#newKey').textContent, 'Recovery key copied'));
 
 $('#loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();

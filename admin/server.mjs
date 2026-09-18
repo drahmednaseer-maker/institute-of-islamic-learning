@@ -6,7 +6,8 @@ import { join, extname, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
 import { db, newId, nowISO, getSetting, setSetting, nextInvoiceNumber, getInvoice, invoiceTotals } from './lib/db.mjs';
-import { isAuthed, issueCookie, clearCookie, checkPassword, setPassword, hasPassword } from './lib/auth.mjs';
+import { isAuthed, issueCookie, clearCookie, checkPassword, setPassword, hasPassword,
+  recoveryKey, rotateRecoveryKey, checkRecoveryKey } from './lib/auth.mjs';
 import { formatLead, formatLeadOneLine, formatInvoice, formatTutor, waLink, money, prettyDate } from './lib/format.mjs';
 import { invoiceHTML } from './lib/invoice-html.mjs';
 
@@ -28,6 +29,8 @@ if (!hasPassword()) {
   setPassword(process.env.ADMIN_PASSWORD);
   console.log('  Password reset from ADMIN_PASSWORD.');
 }
+
+recoveryKey();   /* ensure one exists before anybody needs it */
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon' };
 
@@ -108,6 +111,22 @@ route('POST', /^\/api\/login$/, async (req, res) => {
   if (!checkPassword(body.password)) return bad(res, 'Incorrect password', 401);
   return ok(res, { ok: true }, { 'Set-Cookie': issueCookie() });
 }, { open: true });
+
+/* Reset with the recovery key when the password has been lost. Throttled hard:
+   the key is as powerful as the password. */
+route('POST', /^\/api\/recovery\/reset$/, async (req, res) => {
+  const ip = req.socket.remoteAddress || 'unknown';
+  if (throttled(`reset:${ip}`, 5, 15 * 60_000)) return bad(res, 'Too many attempts. Try again in a few minutes.', 429);
+  const body = await readBody(req);
+  if (!checkRecoveryKey(body.key)) return bad(res, 'That recovery key is not correct', 401);
+  const next = String(body.password || '');
+  if (next.length < 8) return bad(res, 'The new password must be at least 8 characters', 400);
+  setPassword(next);
+  const rotated = rotateRecoveryKey();
+  return ok(res, { ok: true, recovery_key: rotated }, { 'Set-Cookie': issueCookie() });
+}, { open: true });
+
+route('GET', /^\/api\/recovery$/, async (_req, res) => ok(res, { key: recoveryKey() }));
 
 route('POST', /^\/api\/logout$/, async (_req, res) => ok(res, { ok: true }, { 'Set-Cookie': clearCookie() }), { open: true });
 route('GET', /^\/api\/session$/, async (req, res) => ok(res, { authed: isAuthed(req) }), { open: true });
@@ -434,11 +453,13 @@ route('PATCH', /^\/api\/settings$/, async (req, res) => {
   const b = await readBody(req);
   const allowed = ['org_name', 'org_phone', 'org_email', 'invoice_terms', 'base_currency', 'expense_heads', 'invoice_prefix', 'fx_rates'];
   for (const k of allowed) if (k in b) setSetting(k, str(b[k], 4000) ?? '');
+  let rotated = null;
   if (str(b.new_password)) {
     if (String(b.new_password).length < 8) return bad(res, 'Password must be at least 8 characters');
     setPassword(String(b.new_password));
+    rotated = rotateRecoveryKey();
   }
-  return ok(res, orgSettings());
+  return ok(res, { ...orgSettings(), recovery_key: rotated });
 });
 
 /* ---------------- http ---------------- */

@@ -56,3 +56,39 @@ export function isAuthed(req) {
     return typeof exp === 'number' && exp > Date.now();
   } catch { return false; }
 }
+
+/* ---------------- recovery ----------------
+   A single-admin tool has no email to send a reset link to, so recovery is a
+   key the owner stores somewhere safe. It is shown in Settings while signed
+   in, and rotated every time it is used. */
+
+const GROUPS = 4, GROUP_LEN = 4;
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   /* no look-alikes */
+
+function makeKey() {
+  const bytes = randomBytes(GROUPS * GROUP_LEN);
+  const chars = [...bytes].map((b) => ALPHABET[b % ALPHABET.length]);
+  return Array.from({ length: GROUPS }, (_, i) =>
+    chars.slice(i * GROUP_LEN, (i + 1) * GROUP_LEN).join('')).join('-');
+}
+
+export function recoveryKey() {
+  let k = getSetting('recovery_key');
+  if (!k) { k = makeKey(); setSetting('recovery_key', k); }
+  return k;
+}
+
+export const rotateRecoveryKey = () => {
+  const k = makeKey();
+  setSetting('recovery_key', k);
+  return k;
+};
+
+/* Tolerates spacing and case so a key can be typed as it is written down. */
+const normalise = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+export function checkRecoveryKey(given) {
+  const stored = getSetting('recovery_key');
+  if (!stored) return false;
+  return safeEqual(normalise(given), normalise(stored));
+}
