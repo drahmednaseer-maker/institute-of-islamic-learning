@@ -103,27 +103,90 @@ function head(title, subtitle, ...actions) {
 }
 
 /* ---------------- dashboard ---------------- */
+const ICONS = {
+  income: 'M12 2 3 7v10l9 5 9-5V7zm0 4.2 5.2 2.9L12 12l-5.2-2.9zM5 9.8l6 3.4v5.9l-6-3.3zm8 9.3v-5.9l6-3.4v6z',
+  expense: 'M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2m0 4H4V6h16zm0 10H4v-6h16z',
+  profit: 'M3.5 18.5l6-6 4 4L22 6.9 20.6 5.5l-7.1 8.1-4-4L2 17z',
+  people: 'M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10m0 2c-4.4 0-8 2.2-8 5v3h16v-3c0-2.8-3.6-5-8-5',
+  inbox: 'M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m0 12h-4a3 3 0 0 1-6 0H5V5h14z',
+  calendar: 'M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m0 18H5V9h14z',
+  invoice: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM8 13h8v2H8zm0 4h8v2H8z',
+};
+const icon = (name, cls = '') => el('span', { class: `tile__icon ${cls}`,
+  html: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONS[name]}"/></svg>` });
+
+const tile = (name, value, label, tone = '') =>
+  el('div', { class: `tile ${tone}` }, icon(name), el('div', {}, el('b', {}, value), el('span', {}, label)));
+
 async function viewDashboard(view) {
   const s = await api('/summary');
   summary = s; renderNav('dashboard');
-  const pnl = await api(`/report/pnl?month=${s.month}`);
+  const [pnl, recent, tutorList] = await Promise.all([
+    api(`/report/pnl?month=${s.month}`),
+    api('/leads?status=all&q='),
+    api('/tutors'),
+  ]);
+  const monthName = new Date(`${s.month}-01T00:00:00`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const leads = recent.leads.slice(0, 6);
+
+  /* income against expenses, as a proportion of whichever is larger */
+  const peak = Math.max(pnl.incomeBase, pnl.expenseBase, 1);
+  const meter = (label, amount, cls) => el('div', { class: 'meter' },
+    el('div', { class: 'meter__top' }, el('span', {}, label), el('b', {}, money(amount, pnl.base))),
+    el('div', { class: 'bar' }, el('i', { class: cls, style: `width:${Math.round((amount / peak) * 100)}%` })));
+
   view.replaceChildren(
-    head('Dashboard', `Month of ${new Date(`${s.month}-01T00:00:00`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}`),
-    el('div', { class: 'stats' },
-      stat(s.newLeads, 'New enquiries'),
-      stat(s.leadsThisMonth, 'Enquiries this month'),
-      stat(s.tutors, 'Active tutors'),
-      stat(s.unpaid, 'Unpaid invoices'),
-      stat(money(pnl.incomeBase, pnl.base), 'Income this month'),
-      stat(money(pnl.expenseBase, pnl.base), 'Expenses this month'),
-      stat(money(pnl.net, pnl.base), pnl.net >= 0 ? 'Profit this month' : 'Loss this month')),
-    el('div', { class: 'card card--pad' },
-      el('h3', { class: 'muted', style: 'margin-bottom:.6rem' }, 'Quick actions'),
+    el('div', { class: 'head' },
+      el('div', {},
+        el('h1', {}, 'Dashboard'),
+        el('p', {}, `${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · showing ${monthName}`)),
       el('div', { class: 'row' },
         el('button', { class: 'btn btn--gold', onclick: () => { location.hash = 'leads'; setTimeout(newLeadForm, 60); } }, 'Add enquiry'),
         el('button', { class: 'btn btn--green', onclick: () => { location.hash = 'invoices'; setTimeout(() => invoiceForm(), 60); } }, 'New invoice'),
-        el('button', { class: 'btn btn--ghost', onclick: () => { location.hash = 'expenses'; setTimeout(expenseForm, 60); } }, 'Record expense'),
-        el('button', { class: 'btn btn--ghost', onclick: () => { location.hash = 'tutors'; setTimeout(tutorForm, 60); } }, 'Register tutor'))),
+        el('button', { class: 'btn btn--ghost', onclick: () => { location.hash = 'expenses'; setTimeout(expenseForm, 60); } }, 'Record expense'))),
+
+    el('p', { class: 'sec-label' }, 'This month'),
+    el('div', { class: 'tiles tiles--money' },
+      tile('income', money(pnl.incomeBase, pnl.base), `Income · ${pnl.paidCount} paid invoice${pnl.paidCount === 1 ? '' : 's'}`, 'tile--good'),
+      tile('expense', money(pnl.expenseBase, pnl.base), 'Expenses', 'tile--warn'),
+      tile('profit', money(pnl.net, pnl.base), pnl.net >= 0 ? 'Net profit' : 'Net loss', pnl.net >= 0 ? 'tile--good' : 'tile--bad')),
+
+    el('p', { class: 'sec-label' }, 'Activity'),
+    el('div', { class: 'tiles' },
+      tile('inbox', s.newLeads, 'New enquiries'),
+      tile('calendar', s.leadsThisMonth, 'Enquiries this month'),
+      tile('people', s.tutors, 'Active tutors'),
+      tile('invoice', s.unpaid, 'Unpaid invoices')),
+
+    el('div', { class: 'panels' },
+      el('div', { class: 'card card--pad' },
+        el('div', { class: 'panel__head' },
+          el('h3', {}, 'Latest enquiries'),
+          el('button', { class: 'linkish', onclick: () => { location.hash = 'leads'; } }, 'See all')),
+        leads.length
+          ? el('ul', { class: 'feed' }, ...leads.map((l) => el('li', { onclick: () => leadDrawer(l.id, tutorList.tutors, view) },
+              el('span', { class: 'feed__avatar' }, (l.name || '?').trim()[0].toUpperCase()),
+              el('div', { class: 'feed__body' },
+                el('b', {}, l.name),
+                el('span', {}, [l.course, l.country].filter(Boolean).join(' · ') || '—')),
+              el('div', { class: 'feed__meta' }, chip(l.status), el('span', {}, dt(l.created_at))))))
+          : el('p', { class: 'muted' }, 'Nothing yet — website bookings appear here the moment they are submitted.')),
+
+      el('div', { class: 'card card--pad' },
+        el('div', { class: 'panel__head' },
+          el('h3', {}, 'Money this month'),
+          el('button', { class: 'linkish', onclick: () => { location.hash = 'pnl'; } }, 'Full report')),
+        meter('Income', pnl.incomeBase, 'bar--good'),
+        meter('Expenses', pnl.expenseBase, 'bar--warn'),
+        pnl.expensesByHead.length
+          ? el('div', { class: 'heads' },
+              el('p', { class: 'muted', style: 'margin-bottom:.35rem' }, 'Biggest costs'),
+              ...pnl.expensesByHead.slice(0, 4).map((h) => el('div', { class: 'heads__row' },
+                el('span', {}, h.head), el('b', {}, money(h.base, pnl.base)))))
+          : el('p', { class: 'muted', style: 'margin-top:.8rem' }, 'No expenses recorded this month.'),
+        pnl.missingRates.length
+          ? el('p', { class: 'note', style: 'margin-top:.8rem' }, `${pnl.missingRates.join(', ')} has no exchange rate, so it is left out of these totals.`)
+          : null)),
   );
 }
 const stat = (v, label) => el('div', { class: 'stat' }, el('b', {}, v), el('span', {}, label));
@@ -148,8 +211,9 @@ async function viewLeads(view) {
         `${s[0].toUpperCase()}${s.slice(1)}${s === 'all' ? '' : ` (${countFor(s)})`}`))),
     leads.length
       ? el('div', { class: 'card scroll' }, el('table', { class: 'tbl' },
-          el('thead', {}, el('tr', {}, ...['Student', 'Course', 'Schedule', 'Tutor', 'Status', 'Received'].map((h) => el('th', {}, h)))),
-          el('tbody', {}, ...leads.map((l) => el('tr', { onclick: () => leadDrawer(l.id, tutors, view) },
+          el('thead', {}, el('tr', {}, el('th', { class: 'sn' }, '#'), ...['Student', 'Course', 'Schedule', 'Tutor', 'Status', 'Received'].map((h) => el('th', {}, h)))),
+          el('tbody', {}, ...leads.map((l, i) => el('tr', { onclick: () => leadDrawer(l.id, tutors, view) },
+            el('td', { class: 'sn' }, i + 1),
             el('td', {}, el('b', {}, l.name), el('div', { class: 'muted' }, [l.phone, l.country].filter(Boolean).join(' · '))),
             el('td', {}, l.course || '—'),
             el('td', {}, el('div', {}, l.days || '—'), el('div', { class: 'muted' }, l.preferred_time || '')),
@@ -249,8 +313,9 @@ async function viewTutors(view) {
     head('Tutors', `${tutors.length} registered`, el('button', { class: 'btn btn--gold', onclick: () => tutorForm() }, 'Register tutor')),
     tutors.length
       ? el('div', { class: 'card scroll' }, el('table', { class: 'tbl' },
-          el('thead', {}, el('tr', {}, ...['Name', 'Phone', 'Subjects', 'Languages', 'Timezone', 'Status'].map((h) => el('th', {}, h)))),
-          el('tbody', {}, ...tutors.map((t) => el('tr', { onclick: () => tutorForm(t) },
+          el('thead', {}, el('tr', {}, el('th', { class: 'sn' }, '#'), ...['Name', 'Phone', 'Subjects', 'Languages', 'Timezone', 'Status'].map((h) => el('th', {}, h)))),
+          el('tbody', {}, ...tutors.map((t, i) => el('tr', { onclick: () => tutorForm(t) },
+            el('td', { class: 'sn' }, i + 1),
             el('td', {}, el('b', {}, t.name), t.gender ? el('div', { class: 'muted' }, t.gender) : null),
             el('td', {}, t.phone),
             el('td', {}, t.subjects || '—'),
@@ -306,14 +371,15 @@ async function viewInvoices(view) {
       el('button', { class: invFilter === s ? 'on' : '', onclick: () => { invFilter = s; viewInvoices(view); } }, s[0].toUpperCase() + s.slice(1)))),
     invoices.length
       ? el('div', { class: 'card scroll' }, el('table', { class: 'tbl' },
-          el('thead', {}, el('tr', {}, ...['Number', 'Client', 'Issued', 'Due', 'Status', 'Total'].map((h) => el('th', { class: h === 'Total' ? 'num' : '' }, h)))),
-          el('tbody', {}, ...invoices.map((i) => el('tr', { onclick: () => invoiceForm(i.id) },
-            el('td', {}, el('b', {}, i.number)),
-            el('td', {}, i.client_name, el('div', { class: 'muted' }, i.client_phone || '')),
-            el('td', { class: 'muted' }, dt(i.issue_date)),
-            el('td', { class: 'muted' }, dt(i.due_date)),
-            el('td', {}, chip(i.status)),
-            el('td', { class: 'num' }, money(i.totals.total, i.currency)))))))
+          el('thead', {}, el('tr', {}, el('th', { class: 'sn' }, '#'), ...['Number', 'Client', 'Issued', 'Due', 'Status', 'Total'].map((h) => el('th', { class: h === 'Total' ? 'num' : '' }, h)))),
+          el('tbody', {}, ...invoices.map((inv, i) => el('tr', { onclick: () => invoiceForm(inv.id) },
+            el('td', { class: 'sn' }, i + 1),
+            el('td', {}, el('b', {}, inv.number)),
+            el('td', {}, inv.client_name, el('div', { class: 'muted' }, inv.client_phone || '')),
+            el('td', { class: 'muted' }, dt(inv.issue_date)),
+            el('td', { class: 'muted' }, dt(inv.due_date)),
+            el('td', {}, chip(inv.status)),
+            el('td', { class: 'num' }, money(inv.totals.total, inv.currency)))))))
       : el('div', { class: 'card empty' }, 'No invoices yet.'),
   );
 }
@@ -459,8 +525,9 @@ async function viewExpenses(view) {
       .map(([h, v]) => stat(v.toLocaleString('en-US', { maximumFractionDigits: 0 }), h))),
     expenses.length
       ? el('div', { class: 'card scroll' }, el('table', { class: 'tbl' },
-          el('thead', {}, el('tr', {}, ...['Date', 'Head', 'Description', 'Tutor', 'Amount'].map((h) => el('th', { class: h === 'Amount' ? 'num' : '' }, h)))),
-          el('tbody', {}, ...expenses.map((e) => el('tr', { onclick: () => expenseForm(heads, e) },
+          el('thead', {}, el('tr', {}, el('th', { class: 'sn' }, '#'), ...['Date', 'Head', 'Description', 'Tutor', 'Amount'].map((h) => el('th', { class: h === 'Amount' ? 'num' : '' }, h)))),
+          el('tbody', {}, ...expenses.map((e, i) => el('tr', { onclick: () => expenseForm(heads, e) },
+            el('td', { class: 'sn' }, i + 1),
             el('td', { class: 'muted' }, dt(e.date)),
             el('td', {}, el('b', {}, e.head)),
             el('td', {}, e.description || '—'),
